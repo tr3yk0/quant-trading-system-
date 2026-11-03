@@ -1,0 +1,18 @@
+# Optional MT5 bridge settings (put these in .env)
+# Leave blank if MT5 is already running and logged in — auto-connect uses the open terminal.
+
+# MT5_TERMINAL_PATH=C:\Program Files\MetaTrader 5\terminal64.exe
+# MT5_LOGIN=12345678
+# MT5_PASSWORD=your_password
+# MT5_SERVER=YourBroker-Server
+
+# Primary + watchlist
+# Prefer XAUUSD or EURUSD if your broker's index names differ.
+# NAS100 is auto-resolved to USTEC / US100 / NAS100.cash etc. when present.
+# TRADING_SYMBOL=XAUUSD
+# TRADING_SYMBOLS=XAUUSD,EURUSD,GBPUSD,USDJPY,US30,NAS100,BTCUSD
+
+# If dashboard shows tick/bar time ~3 hours in the future:
+# 1. Confirm with an independent UTC clock that the offset is real.
+# 2. Set the correction (positive value is subtracted from raw MT5 epochs):
+# MT5_TIMESTAMP_OFFSET_SECONDS=10800

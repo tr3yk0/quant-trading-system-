@@ -1,0 +1,62 @@
+AI TRADING TEAM v4.39.0 — WINDOWS QUICK START (LAUNCHER FIX)
+
+ONLY THREE BATCH FILES ARE PROVIDED
+-----------------------------------
+START.bat  - initializes the environment, installs/repairs project dependencies, and starts the full application.
+STOP.bat   - gracefully stops the Guardian and its dashboard child process.
+DEBUG.bat  - runs the same setup as START.bat but shows Guardian output in the foreground.
+
+FIRST START
+-----------
+1. Extract the ZIP into a normal writable folder (not inside Program Files).
+2. Double-click START.bat. It creates .venv if needed, installs the project plus dev/ML/quant/Finance research dependencies, attempts QuantLib 1.44 installation, checks the optional native ICE accelerator, and starts the supervised dashboard. This launcher runs directly (no nested CMD self-relaunch) and pauses on success or failure so the window cannot immediately disappear.
+3. When the health check succeeds, your browser opens http://127.0.0.1:8105.
+4. On later starts, dependencies are checked against pyproject.toml; unnecessary reinstall/download work is skipped.
+
+STOP AND DEBUG
+--------------
+- Double-click STOP.bat to request a graceful shutdown. It only force-stops a process if it can verify that the PID belongs to the project Guardian; it does not kill arbitrary processes merely because they use port 8105.
+- Double-click DEBUG.bat to run the same installation/setup and keep Guardian logs visible in the console. Press Ctrl+C to exit the foreground debug session.
+- Logs are stored under logs\ (start.log, install.log, guardian.log, ollama.log and optional native_build.log).
+
+INSTALLATION BEHAVIOR
+---------------------
+- Compatible 64-bit Python 3.12+ is required by the integrated Finance toolkit. START.bat prefers Python 3.12, then 3.13 or the default Python launcher interpreter, and can try installing Python 3.12 with winget if no compatible Python exists.
+- The start process installs the project and its Python extras in one pass, including the Finance toolkit data, sentiment and report libraries; you no longer need separate MT5, public-data or QuantLib installer batch files.
+- The Finance Research workbench includes broker-derived indicators, screening, multi-asset statistics, forecast holdouts, strategy research and portfolio simulations. Company & DCF provides explicit public-equity snapshots/statements, headline-only sentiment and user-assumption DCF scenarios; these provider requests are not run by the continuous MT5 scanner.
+- QuantLib 1.44 is attempted automatically. If its wheel is unavailable for the current Python/network, the core dashboard still starts and QuantLib functionality reports unavailable. Check logs\install.log for details.
+- The MetaTrader5 Python bridge is installed as a project dependency. Live broker data also requires the MetaTrader 5 desktop terminal, a logged-in broker account, and available symbol history.
+- If CMake is installed, START.bat attempts to build the optional native ICE/Grid accelerator. If building fails or CMake is unavailable, the supported Python fallback remains active.
+- Ollama is an optional, separately distributed local-model runtime. START.bat starts its service if it is already installed, but deliberately does not download large models automatically because model downloads and inference can use substantial disk, RAM and CPU. Local AI remains off by default unless enabled in settings/.env.
+
+NEWS ANALYST (v4.39.0)
+---------------------
+- The News Agent consumes the same cached provider headlines as News & Live TV and displays instrument-specific event mechanisms and market reactions. It is non-voting by default; potential severity points are not probabilities.
+- `NEWS_RISK_REDUCTION_ENABLED=1` allows only a gated reduction in position risk/size; it never changes trade direction or increases size. Set this to 0 in `.env` to disable. Paper/shadow test before live deployment.
+- Optional local Ollama research notes are off by default. To opt in, install Ollama separately and set `NEWS_ANALYST_OLLAMA_ENABLED=1`; remote endpoints are blocked and notes cannot vote on trades.
+- API endpoints: `/api/news`, `/api/news/analysis?symbol=XAUUSD`, and `/api/providers`.
+- Full methodology and limitations: `NEWS_AGENT_v4.39.0.md`.
+
+DATA AND SAFETY
+---------------
+- Database: data\trading_team.db
+- Runtime state: .runtime\
+- Logs: logs\
+- .env is created from .env.example only if .env does not already exist. Existing settings are never overwritten.
+- Back up .env and data\trading_team.db before replacing the project with a new ZIP.
+- Default execution mode is paper/research. Do not arm live execution before validating the broker connection, contract sizing, risk gates and demo behavior.
+
+TROUBLESHOOTING
+---------------
+1. Run STOP.bat and wait for it to finish.
+2. Run DEBUG.bat and read the first actual exception from the console.
+3. Inspect logs\install.log for dependency installation failures and logs\guardian.log for application startup failures.
+4. If port 8105 is already in use, identify that process before stopping it; the launcher will not kill unrelated applications automatically.
+
+LAUNCHER FIX NOTES (v4.34.0 build)
+---------------------------------
+- START.bat no longer re-launches itself through a nested `cmd /k` command, which could cause the console to blink closed on some Windows setups.
+- START.bat explicitly pauses on both successful completion and startup failure when double-clicked.
+- DEBUG.bat calls START.bat with `--debug`, keeps the Guardian in the foreground, and shows recent log lines before pausing.
+- The Python check now consistently requires 64-bit Python 3.12+, matching pyproject.toml. Python 3.13 is also checked explicitly.
+- If the console remains open with an error, share the exact first `[ERROR]` line and the last 30 lines of logs\install.log or logs\guardian.log. Do not share your .env file or API keys.
