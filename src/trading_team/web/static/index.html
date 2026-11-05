@@ -1,0 +1,1274 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<script>
+    (function(){
+      try {
+        var t = localStorage.getItem('att_theme');
+        if(t === 'light' || t === 'dark') document.documentElement.dataset.theme = t;
+        else if(window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches)
+          document.documentElement.dataset.theme = 'light';
+        else document.documentElement.dataset.theme = 'dark';
+      } catch(e) { document.documentElement.dataset.theme = 'dark'; }
+    })();
+  </script>
+<meta charset="utf-8"/>
+<meta content="width=device-width,initial-scale=1" name="viewport"/>
+<meta content="#0a0e17" name="theme-color"/>
+<title>AI Trading Team — Command Center</title>
+<link href="/static/app.css?v=4.39.0" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&amp;family=IBM+Plex+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+</head>
+<body>
+<script>
+  (function(){
+    var t = document.documentElement.dataset.theme || 'dark';
+    document.body.classList.add(t === 'light' ? 'theme-light' : 'theme-dark');
+  })();
+</script>
+<div aria-hidden="true" class="global-loading" id="globalLoading"><span class="global-loading-label" id="globalLoadingLabel">Loading data</span></div>
+<button aria-label="Open menu" class="nav-toggle" id="navToggle" type="button">☰</button>
+<div class="nav-backdrop" id="navBackdrop"></div>
+<div class="shell">
+<aside class="sidebar" id="sidebar">
+<div class="brand">
+<div class="brandmark">AI</div>
+<div>
+<div class="brandname">TRADING TEAM</div>
+<div class="brandver"><span id="brandVersion">v4.39.0</span> · COMMAND CENTER</div>
+</div>
+</div>
+<nav class="side-nav">
+<div class="side-section">OPERATIONS</div>
+<button class="nav-item active" data-page="dashboard"><span class="nav-ico">◈</span> Dashboard</button>
+<button class="nav-item" data-page="agents"><span class="nav-ico">◎</span> Agent Desk</button>
+<button class="nav-item" data-page="mesh"><span class="nav-ico">◉</span> AI Research Mesh</button>
+<button class="nav-item" data-page="market"><span class="nav-ico">⌁</span> Market Intel</button>
+<button class="nav-item" data-page="news"><span class="nav-ico">▣</span> News &amp; TV</button>
+<button class="nav-item" data-page="risk"><span class="nav-ico">△</span> Risk &amp; Execution</button>
+<button class="nav-item" data-page="trades"><span class="nav-ico">▤</span> Trade Monitor</button>
+<button class="nav-item" data-page="management"><span class="nav-ico">↗</span> Position Manager</button>
+<div class="side-section">ANALYTICS</div>
+<button class="nav-item" data-page="performance"><span class="nav-ico">◒</span> Performance</button><button class="nav-item" data-page="portfolio"><span class="nav-ico">◫</span> Portfolio</button>
+<button class="nav-item" data-page="research"><span class="nav-ico">⌬</span> Research Lab</button>
+<button class="nav-item" data-page="backtest"><span class="nav-ico">▥</span> Backtest Lab</button>
+<button class="nav-item" data-page="quant"><span class="nav-ico">◈</span> Quant &amp; ICE</button>
+<button class="nav-item" data-page="shadow"><span class="nav-ico">◐</span> Shadow Account</button>
+<div class="side-section">SYSTEM</div>
+<button class="nav-item" data-page="runbooks"><span class="nav-ico">▣</span> Run Cards</button>
+<button class="nav-item" data-page="strategies"><span class="nav-ico">◇</span> Strategy Registry</button>
+<button class="nav-item" data-page="events"><span class="nav-ico">!</span> Events &amp; Errors <span class="count" id="errorCount">0</span></button>
+<button class="nav-item" data-page="settings"><span class="nav-ico">⚙</span> Settings</button>
+</nav>
+<div class="sidebar-bottom">
+<div class="mini-label">CONNECTION</div>
+<div class="health-row"><span class="dot good" id="sideDot"></span><span id="sideState">CONNECTING…</span></div>
+<div class="health-row"><span class="dot amber"></span><span id="sideMode">PAPER / DEMO</span></div>
+<div class="sidebar-note">Live execution is fail-closed. Orders require explicit arm + kill-switch release.</div>
+</div>
+</aside>
+<div class="main">
+<header class="topbar">
+<div class="topbar-left">
+<h1 id="pageTitle">Operations Dashboard</h1>
+<span class="status-pill neutral" id="topbarStatus">STANDBY</span>
+</div>
+<div class="topbar-actions">
+<button aria-label="Toggle theme" class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="Toggle dark / light mode" type="button">
+<span class="theme-ico" id="themeIcon">☀</span>
+<span id="themeLabel">Light</span>
+</button>
+<button aria-label="Enable interface click sounds" aria-pressed="false" class="btn btn-ghost sound-toggle" id="soundToggle" onclick="toggleUiSound()" title="Subtle interface click sounds · off by default" type="button">
+<span aria-hidden="true" class="sound-ico" id="soundToggleIcon">♪</span><span id="soundToggleLabel">Sound off</span>
+</button>
+<button class="btn btn-ghost" onclick="armLive()">ARM LIVE</button>
+<button class="btn btn-ghost" onclick="control('scan')">RUN SCAN</button>
+<button class="btn btn-danger" onclick="control('kill_on')">KILL SWITCH</button>
+</div>
+</header>
+<div class="market-tape">
+<div class="tape-cell">
+<small>INSTRUMENT</small>
+<b id="tapeSymbol">—</b>
+<span>MT5 MARKET FEED</span>
+</div>
+<div class="tape-cell">
+<small>LAST PRICE</small>
+<b id="tapePrice">—</b>
+<span id="tapeSpread">SPREAD —</span>
+</div>
+<div class="tape-cell">
+<small>TEAM DECISION</small>
+<b class="tape-neutral" id="tapeDecision">WAIT</b>
+<span id="tapeConfidence">SCORE —</span>
+</div>
+<div class="tape-cell">
+<small>RISK GATE</small>
+<b id="tapeRisk">STANDBY</b>
+<span>DETERMINISTIC</span>
+</div>
+<div class="tape-actions">
+<button class="btn btn-primary" onclick="control('scan')">ANALYZE MARKET ↗</button>
+<span class="tape-note">Analysis does not guarantee a trade</span>
+</div>
+</div>
+<div aria-label="System navigation" class="global-nav" id="globalNav">
+<button class="global-nav-btn" data-page="dashboard" type="button">Dashboard</button>
+<button class="global-nav-btn" data-page="agents" type="button">Agents</button>
+<button class="global-nav-btn" data-page="mesh" type="button">Mesh</button>
+<button class="global-nav-btn" data-page="market" type="button">Market</button>
+<button class="global-nav-btn" data-page="news" type="button">News &amp; TV</button>
+<button class="global-nav-btn" data-page="risk" type="button">Risk</button>
+<button class="global-nav-btn" data-page="trades" type="button">Trades</button>
+<button class="global-nav-btn" data-page="management" type="button">Positions</button>
+<button class="global-nav-btn" data-page="performance" type="button">Performance</button><button class="global-nav-btn" data-page="portfolio" type="button">Portfolio</button>
+<button class="global-nav-btn" data-page="research" type="button">Research</button>
+<button class="global-nav-btn" data-page="backtest" type="button">Backtest</button>
+<button class="global-nav-btn" data-page="quant" type="button">Quant &amp; ICE</button>
+<button class="global-nav-btn" data-page="shadow" type="button">Shadow</button>
+<button class="global-nav-btn" data-page="runbooks" type="button">Run Cards</button>
+<button class="global-nav-btn" data-page="strategies" type="button">Strategies</button>
+<button class="global-nav-btn" data-page="events" type="button">Events</button>
+<button class="global-nav-btn" data-page="settings" type="button">Settings</button>
+</div>
+<!-- DASHBOARD -->
+<section class="page active" id="dashboard">
+<div class="hero-grid dashboard-kpis">
+<div class="metric-card kpi-equity">
+<span>ACCOUNT EQUITY</span>
+<div class="metric-main" id="dashEquity">—</div>
+<small id="dashBalance">Balance —</small>
+</div>
+<div class="metric-card kpi-pnl">
+<span>OPEN P&amp;L</span>
+<div class="metric-main" id="dashOpenPnl">—</div>
+<small>Floating</small>
+</div>
+<div class="metric-card kpi-margin">
+<span>MARGIN LEVEL</span>
+<div class="metric-main" id="dashMargin">—</div>
+<small id="dashFreeMargin">Free —</small>
+</div>
+<div class="metric-card kpi-cycle">
+<span>CYCLE</span>
+<div class="metric-main" id="dashCycle">0</div>
+<small id="dashActivity">Waiting</small>
+</div>
+</div>
+<div class="two-col">
+<div class="panel chart-panel">
+<div class="panel-head">
+<div>
+<div class="panel-kicker">LIVE CHART</div>
+<h2 id="chartTitle">—</h2>
+</div>
+<div class="chart-controls">
+<div class="chart-symbol-picker">
+<input autocomplete="off" class="chart-symbol-input" id="chartSymbolInput" onfocus="onChartSymbolInput(this.value)" oninput="onChartSymbolInput(this.value)" onkeydown="onChartSymbolKey(event)" placeholder="Symbol…" spellcheck="false" type="text"/>
+<div class="chart-symbol-suggest" hidden="" id="chartSymbolSuggest"></div>
+</div>
+<div class="tf-group">
+<button class="chart-tf-btn" data-tf="M1" onclick="setChartTf('M1')">M1</button>
+<button class="chart-tf-btn active" data-tf="M5" onclick="setChartTf('M5')">M5</button>
+<button class="chart-tf-btn" data-tf="M15" onclick="setChartTf('M15')">M15</button>
+<button class="chart-tf-btn" data-tf="M30" onclick="setChartTf('M30')">M30</button>
+<button class="chart-tf-btn" data-tf="H1" onclick="setChartTf('H1')">H1</button>
+<button class="chart-tf-btn" data-tf="H4" onclick="setChartTf('H4')">H4</button>
+<button class="chart-tf-btn" data-tf="D1" onclick="setChartTf('D1')">D1</button>
+<button class="chart-tf-btn" data-tf="W1" onclick="setChartTf('W1')">W1</button>
+<button class="chart-tf-btn" data-tf="MN1" onclick="setChartTf('MN1')">MN</button>
+</div>
+<div class="ind-group">
+<button class="chart-ind-btn active" data-ind="sma" onclick="toggleIndicator('sma')">SMA</button>
+<button class="chart-ind-btn" data-ind="ema" onclick="toggleIndicator('ema')">EMA</button>
+<button class="chart-ind-btn" data-ind="bb" onclick="toggleIndicator('bb')">BB</button>
+<button class="chart-ind-btn" data-ind="rsi" onclick="toggleIndicator('rsi')">RSI</button>
+<button class="chart-ind-btn" data-ind="macd" onclick="toggleIndicator('macd')">MACD</button>
+<button class="chart-ind-btn" data-ind="vwap" onclick="toggleIndicator('vwap')">VWAP</button>
+</div>
+</div>
+</div>
+<div class="chart-wrap">
+<canvas height="560" id="candleCanvas" width="900"></canvas>
+<div class="chart-hint">Scroll to zoom · Drag to pan · Double-click reset</div>
+</div>
+</div>
+<div class="panel">
+<div class="panel-head">
+<div>
+<div class="panel-kicker">CURRENT DECISION</div>
+<h2 id="dashDecision">WAIT</h2>
+</div>
+<span class="status-pill neutral" id="dashDecisionBadge">STANDBY</span>
+</div>
+<div class="log-list compact" id="dashReasons"></div>
+<div class="panel-head" style="margin-top:16px">
+<div>
+<div class="panel-kicker">PIPELINE AUDIT</div>
+<h2>Decision → Execution</h2>
+</div>
+<span class="status-pill neutral" id="runtimePipelineBadge">WAITING</span>
+</div>
+<div class="account-grid" id="runtimePipelineSummary" style="margin-bottom:10px"></div>
+<div class="log-list compact" id="runtimePipelineTrace"></div>
+</div>
+</div>
+<div class="panel" style="margin-top:16px">
+<div class="panel-head">
+<div>
+<div class="panel-kicker">BROKER UNIVERSE SCANNER</div>
+<h2>Detected setups across market desks</h2>
+</div>
+<span class="status-pill neutral" id="universeScanBadge">ACTIVE SYMBOL ONLY</span>
+</div>
+<p class="muted" id="universeScanStatus" style="margin-bottom:12px">Enable all-symbol analysis in Settings to scan the full broker universe.</p>
+<nav aria-label="Filter by desk" class="detected-setup-nav" id="detectedSetupNav">
+<button class="active" data-setup-filter="all" onclick="setDetectedDeskFilter('all')" type="button">All</button>
+<button data-setup-filter="forex" onclick="setDetectedDeskFilter('forex')" type="button">Forex</button>
+<button data-setup-filter="stocks" onclick="setDetectedDeskFilter('stocks')" type="button">Stocks</button>
+<button data-setup-filter="crypto" onclick="setDetectedDeskFilter('crypto')" type="button">Crypto</button>
+<button data-setup-filter="cfd" onclick="setDetectedDeskFilter('cfd')" type="button">CFD</button>
+<button data-setup-filter="convert" onclick="setDetectedDeskFilter('convert')" type="button">Convert</button>
+<button data-setup-filter="indices" onclick="setDetectedDeskFilter('indices')" type="button">Indices</button>
+</nav>
+<div class="table-wrap">
+<table>
+<thead>
+<tr>
+<th>SYMBOL</th>
+<th>DESK / ROUTE</th>
+<th>SIDE</th>
+<th>SCORE</th>
+<th>STATUS</th>
+<th>QUOTE</th>
+<th></th>
+</tr>
+</thead>
+<tbody id="universeTable"></tbody>
+</table>
+</div>
+<div class="pager" id="universePager"></div>
+</div>
+</section>
+<!-- AGENTS -->
+<section class="page" id="agents">
+<div class="section-header">
+<div>
+<div class="eyebrow">MULTI-SPECIALIST DESK</div>
+<h2>Agent debate floor &amp; consensus</h2>
+</div>
+<span class="status-pill neutral" id="deskFloorStatus">CHECKING</span>
+</div>
+<div class="hero-grid">
+<div class="metric-card"><span>AGREEMENT</span><div class="metric-main" id="deskAgreement">—</div><small id="deskFloorSub">—</small></div>
+<div class="metric-card"><span>CONSENSUS</span><div class="metric-main" id="deskConsensus">—</div><small id="deskConsensusSub">—</small></div>
+<div class="metric-card"><span>RISK PREF</span><div class="metric-main" id="deskRiskPref">—</div><small id="deskRiskSub">—</small></div>
+<div class="metric-card"><span>DISSENT</span><div class="metric-main" id="deskDissentCount">0</div><small id="deskDissentSub">—</small></div>
+</div>
+<div class="panel">
+<div class="panel-head"><div><div class="panel-kicker">RATIONALE</div><h2>Floor agreement rationale</h2></div></div>
+<div class="log-list" id="deskRationale"></div>
+<div id="deskDissentList" style="margin-top:10px"></div>
+</div>
+<div class="panel" style="margin-top:14px">
+<div class="panel-head"><div><div class="panel-kicker">SPECIALIST SEATS</div><h2>Agent cards</h2></div></div>
+<div class="agent-grid" id="agentCards"></div>
+</div>
+<div class="panel desk-transcript-panel" style="margin-top:14px">
+<div class="panel-head">
+<div><div class="panel-kicker">DEBATE TRANSCRIPT</div><h2>Evidence, objections &amp; hand-offs</h2></div>
+<button class="btn btn-ghost btn-sm" onclick="toggleDebateExpand()">Expand</button>
+</div>
+<div class="phase-tabs desk-phase-tabs">
+<button class="chart-tf-btn active" data-phase="ALL" onclick="filterDebatePhase('ALL')">All</button>
+<button class="chart-tf-btn" data-phase="OPENING" onclick="filterDebatePhase('OPENING')">Opening</button>
+<button class="chart-tf-btn" data-phase="CROSS" onclick="filterDebatePhase('CROSS')">Cross</button>
+<button class="chart-tf-btn" data-phase="RISK" onclick="filterDebatePhase('RISK')">Risk</button>
+<button class="chart-tf-btn" data-phase="FINAL" onclick="filterDebatePhase('FINAL')">Final</button>
+</div>
+<div class="log-list agent-discussion-log" id="agentDiscussion"></div>
+</div>
+</section>
+<!-- MESH -->
+<section class="page" id="mesh">
+<div class="section-header">
+<div><div class="eyebrow">AI RESEARCH MESH</div><h2>Orchestration, evidence &amp; learning</h2></div>
+<span class="status-pill neutral" id="discussionMode">CHECKING</span>
+</div>
+<div class="panel">
+<div class="panel-head"><div><div class="panel-kicker">RUNTIME DECISION → EXECUTION AUDIT</div><h2>What happened after the agents reached a decision</h2></div></div>
+<div class="account-grid" id="meshPipelineSummary" style="margin-bottom:12px"></div>
+<div class="log-list compact" id="meshPipelineTrace"></div>
+<p class="muted">A debate conclusion is not an order. This audit separates plan creation, the central risk gate, broker preflight and the final execution status.</p>
+</div>
+<div class="panel regime-council-panel" style="margin-top:14px">
+<div class="panel-head"><div><div class="panel-kicker">SCOUT → REGIME + STRUCTURE → SPECIALIST COUNCIL</div><h2>Regime-weighted council</h2><p class="muted">Anchor strength, scout eligibility and risk-only size adjustments. Scores are ordinal research measures, not winning probabilities; this panel never authorizes an order.</p></div><span class="status-pill neutral" id="regimeCouncilModePill">SHADOW</span></div>
+<div class="account-grid" id="regimeCouncilSummary" style="margin-bottom:12px"><div class="metric-card"><span>MODE</span><div class="metric-main">SHADOW</div></div></div>
+<div class="council-detail-grid" id="regimeCouncilDetails"><div class="council-detail-card"><span>PRIMARY EDGE</span><b>Awaiting analysis</b><p>Regime and structure scores appear after the next analysis cycle.</p></div></div>
+</div>
+<div class="panel" style="margin-top:14px">
+<div class="panel-head"><div><div class="panel-kicker">AGENT DISCUSSION TRANSCRIPT</div><h2>Evidence, objections &amp; hand-offs</h2></div></div>
+<div class="log-list agent-discussion-log" id="meshDiscussion"></div>
+</div>
+<div class="panel" style="margin-top:14px">
+<div class="panel-head"><div><div class="panel-kicker">OUTCOME-BASED MODEL LEARNING</div><h2>Adaptive learning &amp; validation</h2></div>
+<span class="status-pill neutral" id="adaptiveLearningMode">SHADOW ONLY</span>
+</div>
+<div class="check-grid" id="adaptiveLearningSummary"><div class="muted">Learner awaits finalized, linked trade outcomes. Unvalidated models cannot authorize orders.</div></div>
+</div>
+<div class="panel" style="margin-top:14px">
+<div class="panel-head"><div><div class="panel-kicker">DATA HEALTH GUARDIAN</div><h2>Quote · coverage · feeds</h2></div>
+<span class="status-pill neutral" id="guardianPill">—</span>
+</div>
+<div class="account-grid" id="guardianSummary" style="margin-bottom:10px"></div>
+<div class="muted" id="guardianDetail" style="white-space:pre-wrap"></div>
+</div>
+<div class="panel" style="margin-top:14px">
+<div class="panel-head"><div><div class="panel-kicker">CONTINUOUS CHAIR</div><h2>Forced resolution · hierarchy</h2></div>
+<span class="status-pill neutral" id="chairPill">—</span>
+</div>
+<div class="account-grid" id="chairSummary" style="margin-bottom:10px"></div>
+<div class="muted" id="chairNarrative" style="white-space:pre-wrap"></div>
+</div>
+<div class="panel" style="margin-top:14px">
+<div class="panel-head"><div><div class="panel-kicker">CONFLICT MAP</div><h2>Who agrees / disagrees</h2></div>
+<span class="status-pill neutral" id="conflictPill">—</span>
+</div>
+<pre class="log-list" id="conflictTable" style="font-family:ui-monospace,monospace;font-size:12px;white-space:pre-wrap;margin:0"></pre>
+<div class="muted" id="waitMetaBox" style="margin-top:8px"></div>
+</div>
+<div class="panel" style="margin-top:14px">
+<div class="panel-head"><div><div class="panel-kicker">EVIDENCE BUS · HUMAN OVERRIDE</div><h2>Live desk evidence + inject</h2></div></div>
+<div class="log-list compact" id="evidenceBusList" style="max-height:220px;overflow:auto"></div>
+<div class="form-grid" style="margin-top:12px">
+<label>Type
+              <select id="injectType">
+<option value="news">news</option>
+<option value="positioning">positioning</option>
+<option value="manual_level">manual_level</option>
+</select>
+</label>
+<label>Content
+              <input id="injectContent" placeholder="External evidence…" type="text"/>
+</label>
+</div>
+<div class="form-actions" style="margin-top:8px">
+<button class="btn btn-primary" onclick="injectHumanEvidence()" type="button">Inject to Evidence Bus</button>
+<button class="btn btn-ghost" onclick="refreshContinuousPanels()" type="button">Refresh continuous</button>
+</div>
+<div class="muted" id="injectStatus" style="margin-top:6px"></div>
+</div>
+<div class="panel" style="margin-top:14px">
+<div class="panel-head"><div><div class="panel-kicker">DECISION TRACKING</div><h2>Post-decision horizons</h2></div></div>
+<div class="log-list compact" id="decisionTrackingList"></div>
+</div>
+<div class="panel" style="margin-top:14px">
+<div class="panel-head"><div><div class="panel-kicker">HYBRID / LOCAL LLM</div><h2>Classical + Ollama enrichment</h2></div>
+<span class="status-pill neutral" id="hybridPill">—</span>
+</div>
+<div class="muted" id="hybridSummary"></div>
+</div>
+<div class="panel" style="margin-top:14px">
+<div class="panel-head"><div><div class="panel-kicker">ORCHESTRATION TRACE</div><h2>What the agents did this cycle</h2></div></div>
+<div class="log-list" id="meshTrace"></div>
+</div>
+</section>
+<!-- MARKET -->
+<section class="page" id="market">
+<div class="section-header">
+<div><div class="eyebrow">MARKET INTELLIGENCE</div><h2>Desks, structure &amp; multi-timeframe</h2></div>
+</div>
+<div class="desk-grid" id="marketDesksGrid"></div>
+<div class="two-col" style="margin-top:16px">
+<div class="panel">
+<div class="panel-head"><div><div class="panel-kicker">MULTI-TIMEFRAME</div><h2>M5 · M15 · H1 context</h2></div></div>
+<div class="log-list" id="mtfPanel"></div>
+</div>
+<div class="panel">
+<div class="panel-head"><div><div class="panel-kicker">STRUCTURE</div><h2>Key levels &amp; regime</h2></div></div>
+<div class="log-list" id="structurePanel"></div>
+</div>
+</div>
+<div class="panel" style="margin-top:14px">
+<div class="panel-head">
+<div><div class="panel-kicker">INSTRUMENT REGISTRY</div><h2>Broker metadata &amp; gate status</h2></div>
+<button class="btn btn-ghost btn-sm" onclick="refreshInstrumentRegistry(true)">Refresh Registry</button>
+</div>
+<div class="table-wrap">
+<table>
+<thead>
+<tr>
+<th>SYMBOL</th>
+<th>DESCRIPTION</th>
+<th>PRODUCT</th>
+<th>ASSET CLASS</th>
+<th>NOTES</th>
+<th>STATUS</th>
+<th>GATE</th>
+<th>DETAIL</th>
+</tr>
+</thead>
+<tbody id="instrumentRegistryTable"></tbody>
+</table>
+</div>
+<div class="pager" id="registryPager"></div>
+</div>
+</section>
+<!-- NEWS -->
+<section class="page" id="news">
+<div class="section-header news-page-header">
+  <div><div class="eyebrow">AI TRADING TEAM · NEWS DESK</div><h2>Newsroom &amp; Live TV</h2><p class="muted">One in-app news desk for current headlines, story briefs and live broadcaster streams. Publisher attribution is preserved; news is context, not a trading signal by itself.</p></div>
+  <div class="news-header-actions"><span class="status-pill neutral" id="newsConnectionPill">INITIALIZING</span><button class="btn btn-primary" id="newsRefreshBtn" type="button" onclick="refreshNewsHub()">Refresh news</button></div>
+</div>
+<div class="hero-grid news-stats-grid">
+  <div class="metric-card"><span>HEADLINES LOADED</span><div class="metric-main" id="newsCountMetric">—</div><small id="newsCountDetail">Waiting for provider data</small></div>
+  <div class="metric-card"><span>RECENT — LAST 3H</span><div class="metric-main" id="newsFreshMetric">—</div><small>Source timestamp; GDELT uses seen time</small></div>
+  <div class="metric-card"><span>SOURCE STATUS</span><div class="metric-main" id="newsSourceMetric">—</div><small id="newsSourceDetail">RSS / Atom / GDELT</small></div>
+  <div class="metric-card"><span>LAST REFRESH</span><div class="metric-main" id="newsRefreshMetric">—</div><small id="newsRefreshDetail">Refresh is asynchronous</small></div>
+</div>
+<div class="panel news-intel-panel">
+  <div class="news-intel-header">
+    <div><div class="panel-kicker">QUANT RESEARCH · EVENT-DRIVEN INTELLIGENCE</div><h2>Institutional event terminal</h2><p class="muted">Explainable headline triage with an explicit instrument-linkage gate. Priority is an ordinal research queue score, not a percentage, probability, return forecast or trade signal.</p></div>
+    <div class="news-intel-engine"><span class="news-engine-dot"></span><span id="newsIntelEngineStatus">TRIAGE ENGINE READY</span><small id="newsIntelAsOf">Awaiting current sample</small></div>
+  </div>
+  <div class="news-intel-metrics">
+    <div class="news-intel-metric"><span>CRITICAL / HIGH PRIORITY</span><b id="newsIntelHighCount">—</b><small id="newsIntelCriticalDetail">Event-priority bands</small></div>
+    <div class="news-intel-metric"><span>UNIQUE EVENT CLUSTERS</span><b id="newsIntelClusterCount">—</b><small id="newsIntelDuplicateDetail">Near-duplicate consolidation</small></div>
+    <div class="news-intel-metric"><span>MULTI-SOURCE PICKUP</span><b id="newsIntelCorroborationCount">—</b><small>Different source labels; independence is unverified</small></div>
+    <div class="news-intel-metric"><span>MARKET LINKED / UNLINKED</span><b id="newsIntelMarketLink">—</b><small id="newsIntelBlockedDetail">Instrument relevance gate</small></div>
+  </div>
+  <div class="news-intel-workspace">
+    <section class="news-intel-box news-event-radar">
+      <div class="news-intel-box-head"><div><span class="news-mini-label">01 / EVENT RADAR</span><h3>Priority event queue</h3></div><span class="news-intel-count" id="newsIntelRadarCount">0 EVENTS</span></div>
+      <div id="newsEventRadarList" class="news-event-radar-list"><div class="muted">Priority-ranked events appear after the first news refresh.</div></div>
+    </section>
+    <section class="news-intel-box news-asset-pressure">
+      <div class="news-intel-box-head"><div><span class="news-mini-label">02 / CROSS-ASSET</span><h3>Coverage &amp; tone matrix</h3></div><span class="news-intel-count">HEADLINE CONTEXT</span></div>
+      <div id="newsAssetMatrix" class="news-asset-matrix"><div class="muted">No coverage matrix yet.</div></div>
+      <div class="news-matrix-footnote">Tone describes wording, not expected price direction. A mention of a country or person alone does not establish an asset link.</div>
+    </section>
+    <section class="news-intel-box news-coverage-brief">
+      <div class="news-intel-box-head"><div><span class="news-mini-label">03 / COVERAGE QUALITY</span><h3>Desk briefing</h3></div></div>
+      <div id="newsIntelBrief" class="news-intel-brief"><p class="muted">Waiting for a current headline sample.</p></div>
+      <details class="news-methodology"><summary>Scoring methodology &amp; limits</summary><div id="newsIntelMethodology"></div></details>
+    </section>
+  </div>
+  <section class="news-agent-console" id="newsAgentConsole" aria-live="polite">
+    <div class="news-agent-console-head"><div><span class="news-mini-label">04 / INSTRUMENT IMPACT AGENT</span><h3>Event transmission &amp; observed market response</h3><p>Reads the same cached headlines as News Desk and compares them with the current instrument context. Research only; no directional order authority.</p></div><div class="news-agent-policy-pills"><span id="newsAgentInstrumentPill">WAITING FOR SNAPSHOT</span><span id="newsAgentVotePill">DIRECTIONAL VOTE DISABLED</span></div></div>
+    <div id="newsAgentStatusLine" class="news-agent-statusline">Waiting for the current News Agent report…</div>
+    <div id="newsAgentEvents" class="news-agent-events"><div class="news-empty-mini">Instrument-specific catalyst reports appear after the market snapshot and news cache are available.</div></div>
+  </section>
+</div>
+<div class="panel news-tv-panel">
+  <div class="news-tv-system-chrome">
+    <div class="news-tv-brand"><span class="news-tv-brand-icon">AT</span><span><b>AI TRADING TEAM</b><small>NEWS TELEVISION</small></span></div>
+    <div class="news-tv-channel-meta"><span class="news-tv-onair"><i></i> ON AIR</span><span id="newsTvTitle" class="news-tv-current-title">Al Jazeera English · In-app player</span><small id="newsTvStatusCompact">Ready to tune</small></div>
+    <div class="news-tv-controls"><button class="btn btn-ghost btn-sm" id="newsTvModeBtn" type="button" onclick="toggleNewsPlayerMode()">Try broadcaster player</button><a class="news-tv-external" id="newsTvOfficialLink" href="https://www.aljazeera.com/video/live/" target="_blank" rel="noopener noreferrer">Open station ↗</a></div>
+  </div>
+  <div class="news-tv-layout">
+    <div class="news-tv-player-wrap"><div class="news-tv-screen" id="newsTvPlayerWrap"><div class="news-tv-screen-id"><span class="tv-live-badge">LIVE</span><span id="newsTvScreenStation">AL JAZEERA ENGLISH</span><span class="tv-screen-dot">●</span></div><iframe id="newsTvPlayer" title="Al Jazeera English live news" src="https://www.youtube-nocookie.com/embed/live_stream?channel=UCNye-wNBqNL5ZzHSJj3l8Bg&autoplay=0&controls=1&modestbranding=1&rel=0&playsinline=1" loading="lazy" referrerpolicy="strict-origin-when-cross-origin" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe><div class="news-tv-bottomline"><span id="newsTvTicker">Live broadcast · select a station to tune</span><span id="newsTvLocalClock">--:--:--</span></div></div><div class="news-tv-status" id="newsTvStatus" role="status">Loading the embedded broadcaster stream. If playback is unavailable, try the alternate player or the official station page.</div></div>
+    <div class="news-station-rail"><div class="news-station-rail-head"><b>CHANNEL GUIDE</b><span class="muted">Tune station</span></div><div class="news-station-list" id="newsStationList">
+      <button class="news-station-btn active" type="button" data-news-station="aljazeera" onclick="selectNewsStation('aljazeera')"><span class="station-mark">AJ</span><span><b>Al Jazeera English</b><small>Global · English</small></span><span class="station-channel-number">01</span></button>
+      <button class="news-station-btn" type="button" data-news-station="abc" onclick="selectNewsStation('abc')"><span class="station-mark">ABC</span><span><b>ABC News Live</b><small>United States · English</small></span><span class="station-channel-number">02</span></button>
+      <button class="news-station-btn" type="button" data-news-station="cbs" onclick="selectNewsStation('cbs')"><span class="station-mark">CBS</span><span><b>CBS News 24/7</b><small>United States · English</small></span><span class="station-channel-number">03</span></button>
+      <button class="news-station-btn" type="button" data-news-station="france24" onclick="selectNewsStation('france24')"><span class="station-mark">F24</span><span><b>France 24 English</b><small>International · English</small></span><span class="station-channel-number">04</span></button>
+      <button class="news-station-btn" type="button" data-news-station="sky" onclick="selectNewsStation('sky')"><span class="station-mark">SKY</span><span><b>Sky News</b><small>United Kingdom · English</small></span><span class="station-channel-number">05</span></button>
+      <button class="news-station-btn" type="button" data-news-station="dw" onclick="selectNewsStation('dw')"><span class="station-mark">DW</span><span><b>DW News</b><small>International · English</small></span><span class="station-channel-number">06</span></button>
+    </div><div class="muted news-tv-footnote">The TV frame is native to the dashboard; video is supplied by each official broadcaster or its authorized player. Availability can vary by region and broadcast schedule.</div></div>
+  </div>
+</div>
+<div class="panel news-headlines-panel">
+  <div class="panel-head"><div><div class="panel-kicker">LIVE NEWS DESK</div><h2>Latest coverage</h2><p class="muted">One consistent in-app reading view across current headlines. Open any story for its available synopsis and related coverage; source attribution stays visible.</p></div><span class="status-pill neutral" id="newsFeedStatus">NOT REQUESTED</span></div>
+  <div class="news-toolbar">
+    <div class="news-category-tabs" id="newsCategoryTabs" role="tablist" aria-label="News categories">
+      <button class="news-filter-btn active" type="button" data-news-category="all" onclick="setNewsCategory('all')">All headlines</button>
+      <button class="news-filter-btn" type="button" data-news-category="markets" onclick="setNewsCategory('markets')">Markets</button>
+      <button class="news-filter-btn" type="button" data-news-category="macro" onclick="setNewsCategory('macro')">Macro</button>
+      <button class="news-filter-btn" type="button" data-news-category="central_banks" onclick="setNewsCategory('central_banks')">Central banks</button>
+      <button class="news-filter-btn" type="button" data-news-category="geopolitics" onclick="setNewsCategory('geopolitics')">Geopolitics</button>
+      <button class="news-filter-btn" type="button" data-news-category="crypto" onclick="setNewsCategory('crypto')">Crypto</button>
+      <button class="news-filter-btn" type="button" data-news-category="commodities" onclick="setNewsCategory('commodities')">Commodities</button>
+    </div>
+    <label class="news-filter-select-label"><span>Priority</span><select id="newsImpactFilter" aria-label="Filter by research priority" onchange="setNewsImpactFilter(this.value)"><option value="all">All priority bands</option><option value="critical">Critical priority only</option><option value="high">High priority and above</option><option value="medium">Medium priority and above</option></select></label>
+    <label class="news-filter-select-label"><span>Exposure</span><select id="newsAssetFilter" aria-label="Filter by asset exposure" onchange="setNewsAssetFilter(this.value)"><option value="all">All asset exposures</option><option value="USD">US dollar</option><option value="RATES">Rates / bonds</option><option value="GOLD">Gold</option><option value="OIL">Oil / energy</option><option value="EQUITIES">Equities</option><option value="CRYPTO">Crypto</option><option value="EUR">Euro</option><option value="JPY">Japanese yen</option><option value="GBP">British pound</option><option value="CNY">Chinese yuan / China</option><option value="RISK">Global risk sentiment</option></select></label>
+    <label class="news-search-label"><span class="sr-only">Search headlines</span><input id="newsSearchInput" type="search" placeholder="Search headlines, sources or tickers…" autocomplete="off"/></label>
+  </div>
+  <div class="news-feed-meta"><span id="newsResultsLabel">No headlines loaded yet.</span><span id="newsLastRefreshText" class="muted"></span></div>
+  <div class="news-feed-grid" id="newsFeedGrid"><div class="market-empty">News has not been requested yet. Select Refresh news to load the configured public feeds.</div></div>
+  <div class="news-load-more-wrap"><button class="btn btn-ghost" id="newsLoadMoreBtn" type="button" onclick="loadMoreNews()" hidden>Load more headlines</button></div>
+  <div class="muted news-attribution-note" id="newsAttributionNote">Headlines are for situational awareness. Verify the original article and publication time. Automated keyword tone is not editorial fact-checking and must never authorize a trade.</div>
+  <details class="news-source-details"><summary>Feed status and source attribution</summary><div id="newsSourceStatusList" class="news-source-status-list"><div class="muted">Status will appear after a feed request.</div></div></details>
+</div>
+</section>
+<!-- RISK -->
+<section class="page" id="risk">
+<div class="section-header">
+<div><div class="eyebrow">RISK &amp; EXECUTION</div><h2>Central risk gate &amp; account state</h2></div>
+</div>
+<div class="hero-grid">
+<div class="metric-card"><span>RISK VERDICT</span><div class="metric-main" id="riskVerdict">—</div><small id="riskDetail">—</small></div>
+<div class="metric-card"><span>MAX RISK %</span><div class="metric-main" id="riskMaxPct">—</div><small>Per trade</small></div>
+<div class="metric-card"><span>EXPOSURE</span><div class="metric-main" id="riskExposure">—</div><small>Current</small></div>
+<div class="metric-card"><span>KILL SWITCH</span><div class="metric-main" id="riskKill">ON</div><small>Master safety</small></div>
+</div>
+<div class="panel">
+<div class="panel-head"><div><div class="panel-kicker">RISK CHECKS</div><h2>Gate-by-gate audit</h2></div></div>
+<div class="check-grid" id="riskChecks"></div>
+</div>
+<div class="panel" style="margin-top:14px">
+<div class="panel-head"><div><div class="panel-kicker">ACCOUNT SNAPSHOT</div><h2>Broker account</h2></div></div>
+<div class="account-grid" id="accountGrid"></div>
+</div>
+</section>
+<!-- TRADES -->
+<section class="page" id="trades">
+<div class="section-header">
+<div><div class="eyebrow">TRADE MONITOR</div><h2>Open positions, orders &amp; lifecycle</h2></div>
+</div>
+<div class="panel">
+<div class="panel-head"><div><div class="panel-kicker">OPEN POSITIONS</div><h2>Live &amp; paper</h2></div></div>
+<div class="table-wrap">
+<table>
+<thead><tr><th>TICKET</th><th>SYMBOL</th><th>SIDE</th><th>VOLUME</th><th>ENTRY</th><th>SL</th><th>TP</th><th>P&amp;L</th><th>ACTIONS</th></tr></thead>
+<tbody id="positionsTable"></tbody>
+</table>
+</div>
+<div class="pager" id="positionsPager"></div>
+</div>
+<div class="panel" style="margin-top:14px">
+<div class="panel-head"><div><div class="panel-kicker">PENDING ORDERS</div><h2>Working orders</h2></div></div>
+<div class="table-wrap">
+<table>
+<thead><tr><th>TICKET</th><th>SYMBOL</th><th>TYPE</th><th>VOLUME</th><th>PRICE</th><th>SL</th><th>TP</th></tr></thead>
+<tbody id="ordersTable"></tbody>
+</table>
+</div>
+<div class="pager" id="ordersPager"></div>
+</div>
+<div class="panel" style="margin-top:14px">
+<div class="panel-head"><div><div class="panel-kicker">LIFECYCLE LOG</div><h2>Recent fills &amp; closes</h2></div></div>
+<div class="log-list" id="lifecycleLog"></div>
+</div>
+</section>
+<!-- MANAGEMENT -->
+<section class="page" id="management">
+<div class="section-header">
+<div><div class="eyebrow">POSITION MANAGER</div><h2>Adaptive exit &amp; management rules</h2></div>
+</div>
+<div class="panel">
+<div class="panel-head"><div><div class="panel-kicker">MANAGED POSITIONS</div><h2>Eligible for adaptive management</h2></div></div>
+<div class="table-wrap">
+<table>
+<thead><tr><th>TICKET</th><th>SYMBOL</th><th>SIDE</th><th>R-MULT</th><th>ENTRY</th><th>INIT SL</th><th>CURR SL</th><th>TP</th><th>P&amp;L</th></tr></thead>
+<tbody id="managedTable"></tbody>
+</table>
+</div>
+</div>
+</section>
+<!-- PERFORMANCE -->
+<section class="page" id="performance">
+<div class="section-header">
+<div><div class="eyebrow">PERFORMANCE &amp; CALIBRATION</div><h2>Closed outcomes &amp; agent attribution</h2></div>
+<span class="status-pill good">PERSISTENT</span>
+</div>
+<div class="hero-grid">
+<div class="metric-card"><span>CLOSED TRADES</span><div class="metric-main" id="perfClosed">0</div><small>Tracked lifecycle</small></div>
+<div class="metric-card"><span>WIN RATE</span><div class="metric-main" id="perfWinRate">0%</div><small>Closed only</small></div>
+<div class="metric-card"><span>REALIZED P&amp;L</span><div class="metric-main" id="perfPnl">0</div><small>Account currency</small></div>
+<div class="metric-card"><span>AVG R</span><div class="metric-main" id="perfAvgR">0.00R</div><small>Exit R-multiple</small></div>
+</div>
+<div class="two-col">
+<div class="panel">
+<div class="panel-head"><div><div class="panel-kicker">AGENT ATTRIBUTION</div><h2>Signal contribution</h2></div></div>
+<div class="table-wrap">
+<table>
+<thead><tr><th>AGENT</th><th>OBS</th><th>DIR</th><th>WIN RATE</th><th>P&amp;L</th><th>SCORE</th></tr></thead>
+<tbody id="agentPerfTable"></tbody>
+</table>
+</div>
+</div>
+<div class="panel">
+<div class="panel-head"><div><div class="panel-kicker">RECENT OUTCOMES</div><h2>Decision → result</h2></div></div>
+<div class="log-list" id="recentOutcomes"></div>
+</div>
+</div>
+<div class="panel" style="margin-top:14px">
+<div class="panel-head"><div><div class="panel-kicker">CONFIDENCE CALIBRATION</div><h2>Predicted vs actual</h2></div></div>
+<div class="table-wrap">
+<table>
+<thead><tr><th>BIN</th><th>TRADES</th><th>PREDICTED</th><th>ACTUAL WIN RATE</th></tr></thead>
+<tbody id="calibrationTable"></tbody>
+</table>
+</div>
+</div>
+</section>
+<!-- RESEARCH -->
+<section class="page" id="research">
+<div class="section-header">
+<div><div class="eyebrow">SELF-IMPROVING RESEARCH LAB</div><h2>Evidence, strategy health &amp; controlled improvement</h2></div>
+<span class="status-pill neutral" id="researchHealthBadge">HEALTH UNKNOWN</span>
+</div>
+<div class="hero-grid">
+<div class="metric-card"><span>STRATEGY</span><div class="metric-main" id="researchStrategy">—</div><small>Production ID</small></div>
+<div class="metric-card"><span>TRADE SHARPE</span><div class="metric-main" id="researchSharpe">—</div><small>Outcome-based</small></div>
+<div class="metric-card"><span>WIN RATE</span><div class="metric-main" id="researchWinRate">—</div><small>Closed trades</small></div>
+<div class="metric-card"><span>HEALTH</span><div class="metric-main" id="researchHealth">—</div><small>No auto-deploy</small></div>
+</div>
+<div class="panel">
+<div class="panel-head"><div><div class="panel-kicker">RESEARCH STATUS</div><h2>Current evaluation</h2></div></div>
+<div class="log-list" id="researchBody"></div>
+</div>
+<div class="panel" style="margin-top:14px">
+<div class="panel-head"><div><div class="panel-kicker">INTEGRATED FINANCE TOOLKIT</div><h2>Quantitative research workbench</h2><p class="muted">Advanced indicators, broker-symbol screening, multi-asset statistics, chronological forecast validation and strategy experiments. Uses verified MT5 history; research outputs never submit orders.</p></div><span class="status-pill neutral" id="financeToolkitBadge">CHECKING CAPABILITIES</span></div>
+<div class="muted" id="financeToolkitStatus" role="status">Checking installed toolkit and optional capabilities…</div>
+<div class="stage-tabs" id="financeResearchTabs" role="tablist" aria-label="Finance research workspaces">
+<button class="stage-tab active" data-finance-tab="indicators" aria-selected="true" role="tab" type="button">Technical Analytics</button>
+<button class="stage-tab" data-finance-tab="screen" aria-selected="false" role="tab" type="button">Market Screener</button>
+<button class="stage-tab" data-finance-tab="statistics" aria-selected="false" role="tab" type="button">Statistical Lab</button>
+<button class="stage-tab" data-finance-tab="forecast" aria-selected="false" role="tab" type="button">Forecast Validation</button>
+<button class="stage-tab" data-finance-tab="strategy" aria-selected="false" role="tab" type="button">Strategy Research</button>
+<button class="stage-tab" data-finance-tab="company" aria-selected="false" role="tab" type="button">Company &amp; DCF</button>
+</div>
+<div class="finance-research-panels" id="financeResearchPanels">
+<section class="stage-panel active" data-finance-panel="indicators" role="tabpanel">
+<div class="form-grid"><label>Broker symbol<input id="financeIndicatorSymbol" type="text" value="XAUUSD" maxlength="64"/></label><label>Timeframe<select id="financeIndicatorTf"><option>M5</option><option>M15</option><option>H1</option><option>H4</option><option selected>D1</option><option>W1</option></select></label><label>Bars<input id="financeIndicatorBars" type="number" min="80" max="2500" value="500"/></label></div>
+<div class="form-actions"><button class="btn btn-primary" onclick="runFinanceIndicators()" type="button">Calculate indicator stack</button><span class="muted" id="financeIndicatorStatus" role="status">Waiting for a requested analysis.</span></div>
+<div class="hero-grid" id="financeIndicatorMetrics" style="margin-top:12px"><div class="quant-chart-state"><strong>Indicator stack</strong><span>Run with a verified broker symbol/timeframe.</span></div></div>
+<div class="table-wrap" style="margin-top:12px"><table class="data-table"><thead><tr><th>Indicator</th><th>Latest value</th><th>Unit</th><th>Interpretation</th></tr></thead><tbody id="financeIndicatorTable"><tr><td colspan="4" class="muted">No calculation yet.</td></tr></tbody></table></div>
+<div class="muted" id="financeIndicatorNotes" style="margin-top:8px"></div>
+</section>
+<section class="stage-panel" data-finance-panel="screen" role="tabpanel" hidden>
+<div class="form-grid"><label>Broker symbols (max 15)<input id="financeScreenSymbols" type="text" value="XAUUSD,EURUSD,GBPUSD,USDJPY" maxlength="700"/></label><label>Timeframe<select id="financeScreenTf"><option>M5</option><option>M15</option><option selected>H1</option><option>H4</option><option>D1</option></select></label><label>Bars per symbol<input id="financeScreenBars" type="number" min="80" max="800" value="300"/></label></div>
+<div class="form-actions"><button class="btn btn-primary" onclick="runFinanceScreen()" type="button">Scan symbols</button><span class="muted" id="financeScreenStatus" role="status">Scans only the symbols you enter. Failed symbols remain visible.</span></div>
+<div class="table-wrap" style="margin-top:12px"><table class="data-table"><thead><tr><th>Symbol</th><th>Last close</th><th>Trend</th><th>RSI 14</th><th>ADX 14</th><th>NATR %</th><th>Breakout</th><th>Screen result</th></tr></thead><tbody id="financeScreenBody"><tr><td colspan="8" class="muted">Run a screen to populate broker-derived values.</td></tr></tbody></table></div>
+<div class="log-list" id="financeScreenFailures" style="margin-top:10px"></div>
+</section>
+<section class="stage-panel" data-finance-panel="statistics" role="tabpanel" hidden>
+<div class="form-grid"><label>Broker symbols (2–8)<input id="financeStatsSymbols" type="text" value="XAUUSD,EURUSD,GBPUSD" maxlength="400"/></label><label>Timeframe<select id="financeStatsTf"><option selected>D1</option><option>H4</option><option>H1</option><option>M15</option></select></label><label>Bars per symbol<input id="financeStatsBars" type="number" min="80" max="2000" value="500"/></label></div>
+<div class="form-actions"><button class="btn btn-primary" onclick="runFinanceStatistics()" type="button">Run correlation, PCA &amp; cointegration</button><span class="muted" id="financeStatsStatus" role="status">Requires aligned history from at least two broker symbols.</span></div>
+<div class="hero-grid" id="financeStatsMetrics" style="margin-top:12px"></div>
+<div class="grid-2" style="margin-top:12px"><div class="panel"><div class="panel-head"><div><div class="panel-kicker">RETURN CORRELATION</div><h3>Aligned observations</h3></div></div><div class="table-wrap"><table class="data-table"><thead id="financeCorrHead"></thead><tbody id="financeCorrBody"><tr><td class="muted">No statistics run.</td></tr></tbody></table></div></div><div class="panel"><div class="panel-head"><div><div class="panel-kicker">PCA / CLUSTERS</div><h3>Cross-asset structure</h3></div></div><div class="log-list" id="financeStatsStructure"><div class="log muted">Run statistical analysis to compute sample diagnostics.</div></div></div></div>
+<div class="panel" style="margin-top:12px"><div class="panel-head"><div><div class="panel-kicker">ENGLE–GRANGER</div><h3>Cointegration pair tests</h3><p class="muted">Formation-sample diagnostic only. Confirm on a separate out-of-sample window before any pairs strategy.</p></div></div><div class="table-wrap"><table class="data-table"><thead><tr><th>First</th><th>Second</th><th>Test statistic</th><th>Raw p-value</th><th>Holm-adjusted p</th></tr></thead><tbody id="financeCointegrationBody"><tr><td colspan="5" class="muted">No test run.</td></tr></tbody></table></div><div class="muted" id="financeStatsNotes" style="margin-top:8px"></div></div>
+</section>
+<section class="stage-panel" data-finance-panel="forecast" role="tabpanel" hidden>
+<div class="form-grid"><label>Broker symbol<input id="financeForecastSymbol" type="text" value="XAUUSD" maxlength="64"/></label><label>Timeframe<select id="financeForecastTf"><option>M15</option><option>H1</option><option>H4</option><option selected>D1</option></select></label><label>Bars<input id="financeForecastBars" type="number" min="160" max="1800" value="800"/></label><label>Model<select id="financeForecastModel"><option value="ridge" selected>Ridge regression</option><option value="forest">Random forest</option><option value="boosting">Gradient boosting</option><option value="svr">Support vector regression</option><option value="mlp">Small neural MLP</option></select></label><label>Training fraction<input id="financeForecastTrain" type="number" min="0.55" max="0.85" step="0.05" value="0.75"/></label></div>
+<div class="form-actions"><button class="btn btn-primary" onclick="runFinanceForecast()" type="button">Evaluate chronological holdout</button><span class="muted" id="financeForecastStatus" role="status">Forecast evaluation is CPU bounded; compare errors against the zero-return baseline.</span></div>
+<div class="hero-grid" id="financeForecastMetrics" style="margin-top:12px"></div><div class="log-list" id="financeForecastDetails" style="margin-top:10px"></div><div class="muted" id="financeForecastNotes" style="margin-top:8px"></div>
+</section>
+<section class="stage-panel" data-finance-panel="strategy" role="tabpanel" hidden>
+<div class="form-grid"><label>Broker symbol<input id="financeStrategySymbol" type="text" value="XAUUSD" maxlength="64"/></label><label>Timeframe<select id="financeStrategyTf"><option selected>M5</option><option>M15</option><option>H1</option><option>H4</option><option>D1</option></select></label><label>Bars<input id="financeStrategyBars" type="number" min="100" max="5000" value="2000"/></label><label>Signal method<select id="financeStrategyMethod"><option value="ma_crossover">Moving-average crossover</option><option value="rsi_reversion">RSI mean reversion</option><option value="bollinger_reversion">Bollinger mean reversion</option><option value="breakout">Donchian breakout</option><option value="ribbon_trend">MA ribbon trend</option></select></label><label>Fast MA<input id="financeStrategyFast" type="number" min="2" max="100" value="20"/></label><label>Slow MA<input id="financeStrategySlow" type="number" min="3" max="200" value="50"/></label><label>Initial capital<input id="financeStrategyCapital" type="number" min="100" step="100" value="10000"/></label><label>Commission bps / side<input id="financeStrategyCommission" type="number" min="0" max="500" step="0.5" value="1"/></label><label>Slippage bps / side<input id="financeStrategySlippage" type="number" min="0" max="500" step="0.5" value="1"/></label></div>
+<div class="form-actions"><button class="btn btn-primary" onclick="runFinanceStrategyTest()" type="button">Run toolkit strategy test</button><span class="muted" id="financeStrategyStatus" role="status">Research engine uses close signals executed at the next open.</span></div>
+<div class="hero-grid" id="financeStrategyMetrics" style="margin-top:12px"></div><div class="table-wrap" style="margin-top:12px"><table class="data-table"><thead><tr><th>Fill time</th><th>Signal time</th><th>Asset</th><th>Quantity</th><th>Fill price</th><th>Commission</th><th>Phase</th></tr></thead><tbody id="financeStrategyFills"><tr><td colspan="7" class="muted">No research run.</td></tr></tbody></table></div><div class="muted" id="financeStrategyNotes" style="margin-top:8px"></div>
+</section>
+<section class="stage-panel" data-finance-panel="company" role="tabpanel" hidden>
+<div class="panel-head"><div><div class="panel-kicker">ON-DEMAND PUBLIC EQUITY RESEARCH</div><h3>Company fundamentals, statements, headlines and DCF</h3><p class="muted">Public-company data is requested only when you click. It is separate from broker-symbol analysis and never authorizes live MT5 orders. Data may be delayed or restated.</p></div></div>
+<div class="form-grid"><label>Public ticker<input id="financeCompanyTicker" type="text" value="AAPL" maxlength="25" autocomplete="off"/></label><label>Statement<select id="financeCompanyStatementKind"><option value="income">Income statement</option><option value="balance">Balance sheet</option><option value="cashflow">Cash flow statement</option></select></label><label>Frequency<select id="financeCompanyStatementFrequency"><option value="annual">Annual</option><option value="quarterly">Quarterly</option></select></label></div>
+<div class="form-actions"><button class="btn btn-primary" type="button" onclick="runFinanceCompanySnapshot()">Load company snapshot</button><button class="btn btn-ghost" type="button" onclick="runFinanceCompanyStatements()">Load statement</button><button class="btn btn-ghost" type="button" onclick="runFinanceCompanyNews()">Analyze headline sentiment</button><span class="muted" id="financeCompanyStatus" role="status">No public provider request has been made.</span></div>
+<div class="hero-grid" id="financeCompanyMetrics" style="margin-top:12px"><div class="quant-chart-state"><strong>Company snapshot</strong><span>Request a ticker to load the provider-reported snapshot.</span></div></div>
+<div class="table-wrap" style="margin-top:12px"><table class="data-table"><thead><tr><th>Field</th><th>Provider-reported value</th></tr></thead><tbody id="financeCompanyBody"><tr><td colspan="2" class="muted">No snapshot loaded.</td></tr></tbody></table></div>
+<div class="panel" style="margin-top:12px"><div class="panel-head"><div><div class="panel-kicker">FINANCIAL STATEMENTS</div><h4 id="financeCompanyStatementTitle">Annual income statement</h4></div></div><div class="table-wrap"><table class="data-table"><thead id="financeCompanyStatementHead"></thead><tbody id="financeCompanyStatementBody"><tr><td class="muted">Load a statement explicitly.</td></tr></tbody></table></div><div class="muted" id="financeCompanyStatementNote" style="margin-top:8px"></div></div>
+<div class="panel" style="margin-top:12px"><div class="panel-head"><div><div class="panel-kicker">HEADLINE CONTEXT</div><h4>Public headline sentiment</h4></div><span class="status-pill neutral" id="financeCompanySentimentBadge">NOT REQUESTED</span></div><div class="hero-grid" id="financeCompanySentimentMetrics"></div><div class="table-wrap"><table class="data-table"><thead><tr><th>Published</th><th>Headline</th><th>Sentiment</th><th>Compound</th><th>Source</th></tr></thead><tbody id="financeCompanyNewsBody"><tr><td colspan="5" class="muted">No headline sentiment run.</td></tr></tbody></table></div><div class="muted" id="financeCompanyNewsNote" style="margin-top:8px"></div></div>
+<div class="panel" style="margin-top:12px"><div class="panel-head"><div><div class="panel-kicker">ASSUMPTION-DRIVEN VALUATION</div><h4>Discounted cash-flow scenarios</h4><p class="muted">Enter annual free-cash-flow projections yourself. Values are not automatically forecast from present-day statements.</p></div></div>
+<div class="form-grid"><label>Annual cash-flow projections (comma separated)<input id="financeDcfFlows" type="text" placeholder="100,110,120,130,140" maxlength="300"/></label><label>Discount rate / WACC<input id="financeDcfRate" type="number" min="0.001" max="0.99" step="0.005" value="0.10"/></label><label>Terminal growth<input id="financeDcfGrowth" type="number" min="-0.49" max="0.98" step="0.005" value="0.025"/></label><label>Cash<input id="financeDcfCash" type="number" min="0" step="1000000" value="0"/></label><label>Debt<input id="financeDcfDebt" type="number" min="0" step="1000000" value="0"/></label><label>Shares outstanding<input id="financeDcfShares" type="number" min="0.000001" step="1000000" value="1"/></label></div>
+<div class="form-actions"><button class="btn btn-primary" type="button" onclick="runFinanceDCF()">Calculate DCF and sensitivity</button><span class="muted" id="financeDcfStatus" role="status">Waiting for explicit projections and assumptions.</span></div><div class="hero-grid" id="financeDcfMetrics" style="margin-top:12px"></div><div class="table-wrap" style="margin-top:12px"><table class="data-table"><thead><tr><th>Discount rate</th><th>Terminal growth</th><th>Enterprise value</th><th>Equity value</th><th>Value per share</th></tr></thead><tbody id="financeDcfSensitivityBody"><tr><td colspan="5" class="muted">No valuation run.</td></tr></tbody></table></div><div class="muted" id="financeDcfNotes" style="margin-top:8px"></div></div>
+</section>
+</div>
+</div>
+</section>
+<!-- BACKTEST -->
+<section class="page" id="backtest">
+<div class="section-header">
+<div><div class="eyebrow">BACKTEST &amp; WALK-FORWARD</div><h2>Historical validation lab</h2></div>
+<span class="status-pill neutral" id="backtestRunState">READY</span>
+</div>
+<div class="panel">
+<div class="panel-head"><div><div class="panel-kicker">RUN CONFIG</div><h2>Parameters</h2></div>
+<button class="btn btn-ghost" onclick="loadBacktestDefaultsFromSettings()" type="button">Load from Settings</button>
+</div>
+<div class="form-grid">
+<label>Symbol <input id="btSymbol" type="text" value="XAUUSD"/></label>
+<label>Strategy
+              <select id="btStrategy">
+<option value="trend_following">trend_following</option>
+<option value="mean_reversion">mean_reversion</option>
+<option value="breakout">breakout</option>
+<option value="momentum_burst">momentum_burst</option>
+<option value="session_liquidity">session_liquidity</option>
+<option value="order_flow_continuation">order_flow_continuation</option>
+<option value="absorption_fade">absorption_fade</option>
+</select>
+</label>
+<label>Bars (M5) <input id="btBars" max="50000" min="500" type="number" value="3000"/></label>
+<label>Initial equity <input id="btEquity" min="100" step="100" type="number" value="10000"/></label>
+<label>Risk % / trade <input id="btRisk" max="5" min="0.05" step="0.05" type="number" value="0.5"/></label>
+<label>Execution model
+              <select id="btExecutionModel">
+<option selected="" value="ohlc">OHLC bar</option>
+<option value="ticks">Historical ticks</option>
+</select>
+</label>
+<label>OHLCV CSV (optional) <input id="btCsv" placeholder="Blank = MT5 history" type="text"/></label>
+<label>Ticks CSV (tick mode) <input id="btTicksCsv" placeholder="timestamp,bid,ask" type="text"/></label>
+<label>Spread (price units) <input id="btSpread" placeholder="optional" step="0.01" type="number"/></label>
+<label>Slippage (price) <input id="btSlippage" placeholder="optional" step="0.01" type="number"/></label>
+<label>Commission (bps) <input id="btCommission" min="0" step="0.1" type="number" value="0"/></label>
+</div>
+<div class="panel-head" style="margin-top:16px"><div><div class="panel-kicker">OPTIMIZE</div><h2>Grid / walk-forward</h2></div></div>
+<div class="form-grid">
+<label>Mode
+              <select id="btOptimizeMode">
+<option value="grid">Grid search</option>
+<option value="walk_forward">Walk-forward</option>
+<option value="all">All strategies</option>
+</select>
+</label>
+<label>Objective
+              <select id="btObjective">
+<option value="composite">composite</option>
+<option value="sharpe">sharpe</option>
+<option value="profit_factor">profit_factor</option>
+<option value="expectancy">expectancy</option>
+<option value="calmar">calmar</option>
+<option value="net_pnl">net_pnl</option>
+</select>
+</label>
+<label>Max trials <input id="btTrials" max="200" min="5" type="number" value="40"/></label>
+<label>Walk-forward folds <input id="btFolds" max="12" min="2" type="number" value="4"/></label>
+<label>IS ratio <input id="btIsRatio" max="0.9" min="0.5" step="0.05" type="number" value="0.7"/></label>
+</div>
+<div class="form-actions control-row" style="margin-top:12px">
+<button class="btn btn-primary" onclick="runBacktest()">Run Single</button>
+<button class="btn btn-ghost" onclick="runBacktestAll()">Run All Strategies</button>
+<button class="btn btn-ghost" onclick="runBacktestOptimize('grid')">Optimize Grid</button>
+<button class="btn btn-ghost" onclick="runBacktestOptimize('walk_forward')">Walk-Forward</button>
+<button class="btn btn-ghost" onclick="runBacktestOptimize('all')">Optimize All</button>
+</div>
+<div class="muted" id="backtestMessage" style="margin-top:10px"></div>
+<div class="muted" id="btBusy" style="margin-top:6px;display:none"></div>
+<div class="hero-grid" id="backtestMetricCards" style="margin-top:16px"></div>
+<div class="hero-grid" id="btMetrics" style="margin-top:8px"></div>
+<div class="log-list" id="backtestResult" style="margin-top:12px"></div>
+<div class="log-list" id="btOutput" style="margin-top:8px"></div>
+</div>
+<div class="panel" id="backtestExperimentLedger" style="margin-top:14px">
+<div class="panel-head"><div><div class="panel-kicker">REPRODUCIBILITY &amp; GOVERNANCE</div><h2>Saved research experiments</h2><p class="muted">Each successful run saves the data fingerprint, exact strategy/cost configuration, result summary and validation tier. Runs remain research-only; nothing is automatically promoted.</p></div><button class="btn btn-ghost" type="button" onclick="refreshResearchExperiments()">Refresh history</button></div>
+<div id="researchExperimentStatus" class="muted" role="status">Loading experiment history when this page opens.</div>
+<div class="table-wrap"><table class="data-table"><thead><tr><th>Created (UTC)</th><th>Experiment</th><th>Symbol / TF</th><th>Strategy / type</th><th>Bars</th><th>Net P&amp;L / score</th><th>Validation tier</th><th>Details</th></tr></thead><tbody id="researchExperimentBody"><tr><td colspan="8" class="muted">No experiments loaded.</td></tr></tbody></table></div>
+<div class="pager" id="researchExperimentPager" style="margin-top:10px"></div>
+<div class="panel" id="researchExperimentDetailPanel" style="margin-top:12px;display:none"><div class="panel-head"><div><div class="panel-kicker">EXPERIMENT DETAIL</div><h3 id="researchExperimentDetailTitle">Run record</h3></div></div><pre id="researchExperimentDetail" style="white-space:pre-wrap;overflow:auto;max-height:420px"></pre></div>
+</div>
+</section>
+<!-- SHADOW -->
+<!-- QUANT LAB -->
+<!-- QUANT LAB -->
+<!-- QUANT LAB = embedded QuantSphere Terminal (Streamlit) -->
+<!-- QUANT + ICE (in-process — one system) -->
+<section class="page" id="quant">
+<div class="section-header">
+<div>
+<div class="eyebrow">UNIFIED ENGINE</div>
+<h2>Quant analytics · ICE confluence · Grid suite</h2>
+</div>
+<span class="status-pill neutral" id="quantPill">IN-PROCESS</span>
+</div><div class="panel">
+<div class="panel-head">
+<div><div class="panel-kicker">RUN CONFIG</div><h2>Same market feed as the rest of the command center</h2></div>
+</div>
+<div class="form-grid">
+<label>Symbol <input id="quantSymbol" placeholder="Blank = active symbol" type="text"/></label>
+<label>Timeframe
+              <select id="quantTf">
+<option selected="">M5</option><option>M15</option><option>H1</option><option>H4</option><option>D1</option>
+</select>
+</label>
+<label>Bars <input id="quantBars" max="5000" min="80" type="number" value="400"/></label>
+<label>Grid profile
+              <select id="quantGrid">
+<option>SmartRegime</option><option>ATRAdaptive</option><option>Geometric</option>
+<option>Fibonacci</option><option>Breakout</option><option>MeanReversionGrid</option>
+<option>AntiMartingale</option><option>TrendFollowingGrid</option>
+</select>
+</label>
+<label>Option strike <input id="quantStrike" placeholder="ATM" step="any" type="number"/></label>
+<label>Days to expiry <input id="quantDays" type="number" value="30"/></label>
+<label>σ annual <input id="quantSigma" step="0.01" type="number" value="0.20"/></label>
+<label class="check-label"><input checked="" id="quantIsCall" type="checkbox"/> Call</label>
+</div>
+<div class="form-actions">
+<button class="btn btn-primary" onclick="runUnifiedQuant()" type="button">Run Quant + ICE</button>
+<button class="btn btn-ghost" onclick="runQuantLabFast()" type="button">Quant charts only</button>
+<button class="btn btn-ghost" onclick="runIceOnly()" type="button">ICE + Grid only</button>
+<span class="muted" id="quantStatus">Runs inside this dashboard process — no second app</span>
+</div>
+</div><div aria-label="Quant analysis navigation" class="quant-stage-nav-row"><div aria-label="Quantitative analysis sub-tabs" class="stage-tabs" id="quantStageTabs" role="tablist">
+<button aria-controls="quantStageOverview" aria-selected="true" class="stage-tab active" data-stage="overview" id="quantTabOverview" role="tab" type="button">Overview</button>
+<button aria-controls="quantStageKalman" aria-selected="false" class="stage-tab" data-stage="kalman" id="quantTabKalman" role="tab" type="button">🛰 Kalman</button>
+<button aria-controls="quantStageVol" aria-selected="false" class="stage-tab" data-stage="vol" id="quantTabVol" role="tab" type="button">🌋 Vol Surface</button>
+<button aria-controls="quantStagePricing" aria-selected="false" class="stage-tab" data-stage="pricing" id="quantTabPricing" role="tab" type="button">⚛ Pricing</button>
+<button aria-controls="quantStageBacktest" aria-selected="false" class="stage-tab" data-stage="backtest" id="quantTabBacktest" role="tab" type="button">📈 Backtest</button>
+<button aria-controls="quantStageOptimizer" aria-selected="false" class="stage-tab" data-stage="optimizer" id="quantTabOptimizer" role="tab" type="button">🎯 Walk-forward</button>
+<button aria-controls="quantStageForecast" aria-selected="false" class="stage-tab" data-stage="forecast" id="quantTabForecast" role="tab" type="button">🔮 Forecast</button>
+<button aria-controls="quantStageDocs" aria-selected="false" class="stage-tab" data-stage="docs" id="quantTabDocs" role="tab" type="button">📚 Docs</button>
+<button aria-controls="quantStageIce" aria-selected="false" class="stage-tab" data-stage="ice" id="quantTabIce" role="tab" type="button">ICE / Grid</button>
+</div><button aria-label="Open the dedicated Portfolio workspace" class="stage-tab stage-tab-link" data-page="portfolio" title="Open the dedicated Portfolio workspace" type="button">🧭 Portfolio ↗</button></div><div class="quant-stage-panels" id="quantStagePanels"><section aria-labelledby="quantTabOverview" class="stage-panel active" data-stage-panel="overview" id="quantStageOverview" role="tabpanel"><div class="hero-grid" id="quantHero" style="margin-top:16px">
+<div class="metric-card"><span>LAST PRICE</span><div class="metric-main" id="qLast">—</div><small id="qBars">bars —</small></div>
+<div class="metric-card"><span>KALMAN</span><div class="metric-main" id="qKalmanSig">—</div><small id="qKalmanDrift">drift —</small></div>
+<div class="metric-card"><span>ICE SIGNAL</span><div class="metric-main" id="qIceSig">—</div><small id="qIceConf">conf —</small></div>
+<div class="metric-card"><span>GARCH / BS</span><div class="metric-main" id="qGarch">—</div><small id="qBs">BS —</small></div>
+</div><div class="muted" id="quantResult" style="margin-top:12px"></div><div class="panel quant-overview-note"><div class="panel-head"><div><div class="panel-kicker">WORKSPACE GUIDE</div><h2>Choose an analysis workspace above</h2><p class="muted">Each navigation button opens one focused view. Shared symbol/timeframe settings remain available above; detailed charts and results are kept in their own workspaces.</p></div></div><div class="dash-nav-grid"><button aria-label="Open Kalman analysis workspace" class="dash-nav-card" data-quant-stage="kalman" type="button"><b>Kalman</b><span>Price filter and uncertainty bands</span></button><button aria-label="Open Vol Surface analysis workspace" class="dash-nav-card" data-quant-stage="vol" type="button"><b>Vol Surface</b><span>Volatility estimates and modeled scenarios</span></button><button aria-label="Open Pricing analysis workspace" class="dash-nav-card" data-quant-stage="pricing" type="button"><b>Pricing</b><span>Pricing engines, Greeks and QuantLib</span></button><button aria-label="Open Backtest analysis workspace" class="dash-nav-card" data-quant-stage="backtest" type="button"><b>Backtest</b><span>Strategy equity and comparative diagnostics</span></button><button aria-label="Open Walk-forward analysis workspace" class="dash-nav-card" data-quant-stage="optimizer" type="button"><b>Walk-forward</b><span>In-sample versus out-of-sample checks</span></button><button aria-label="Open Forecast analysis workspace" class="dash-nav-card" data-quant-stage="forecast" type="button"><b>Forecast</b><span>Conditional forecast distributions</span></button><button aria-label="Open ICE / Grid analysis workspace" class="dash-nav-card" data-quant-stage="ice" type="button"><b>ICE / Grid</b><span>Confluence layers and grid levels</span></button></div></div></section><section aria-labelledby="quantTabKalman" class="stage-panel" data-stage-panel="kalman" hidden="hidden" id="quantStageKalman" role="tabpanel"><p class="muted stage-description">Kalman price estimate and uncertainty bands for the selected symbol and timeframe.</p><div class="panel chart-panel">
+<div class="panel-head"><div><div class="panel-kicker">PRICE + KALMAN</div><h2>±2σ bands</h2></div></div>
+<div id="chartKalman" style="height:320px;width:100%"><div class="quant-chart-state"><strong>Kalman chart ready to load</strong><span>Opening Quant &amp; ICE requests a lightweight preview from the selected symbol/timeframe.</span></div></div>
+</div></section><section aria-labelledby="quantTabVol" class="stage-panel" data-stage-panel="vol" hidden="hidden" id="quantStageVol" role="tabpanel"><p class="muted stage-description">Historical volatility and modeled scenarios. This is not market-implied volatility unless option quotes are supplied.</p><div class="panel chart-panel">
+<div class="panel-head"><div><div class="panel-kicker">VOLATILITY SCENARIO</div><h2>Model σ grid</h2></div></div>
+<div id="chartVol" style="height:340px;width:100%"><div class="quant-chart-state"><strong>Volatility surface ready to load</strong><span>Waiting for verified candles and a volatility estimate. This is a modeled scenario unless market option quotes are supplied.</span></div></div>
+</div></section><section aria-labelledby="quantTabPricing" class="stage-panel" data-stage-panel="pricing" hidden="hidden" id="quantStagePricing" role="tabpanel"><p class="muted stage-description">Option valuation and model sensitivities. Prices are model outputs, not executable broker quotes.</p><div class="panel chart-panel">
+<div class="panel-head"><div><div class="panel-kicker">PRICING + GRID</div><h2>Pricing engines &amp; option sensitivities</h2></div></div>
+<div id="chartPricing" style="height:340px;width:100%"><div class="quant-chart-state"><strong>Pricing engines</strong><span>Use “Run Quant + ICE” to run the heavier pricing simulations.</span></div></div>
+<div class="panel" id="quantLibPanel" style="margin:12px 0 0;padding:14px">
+<div class="panel-head"><div><div class="panel-kicker">QUANTLIB 1.44 · C++ QUANT FINANCE ENGINE</div><h2>Option pricing, Greeks &amp; scenarios</h2><p class="muted">Uses the official QuantLib Python binding. Supply a spot/volatility assumption; this is a model value, not an option-chain quote or order instruction.</p></div><span class="status-pill neutral" id="quantLibBadge">CHECKING</span></div>
+<div class="muted" id="quantLibStatus" role="status" style="margin-bottom:10px">Checking the QuantLib engine availability…</div>
+<div class="form-grid">
+<label>Spot <input id="qlSpot" min="0.00000001" placeholder="Auto: latest selected-symbol close" step="any" type="number"/></label>
+<label>Strike <input id="qlStrike" min="0.00000001" placeholder="Defaults to spot" step="any" type="number"/></label>
+<label>Days to expiry <input id="qlDays" max="36500" min="1" type="number" value="30"/></label>
+<label>Risk-free rate (annual) <input id="qlRiskFree" step="0.001" type="number" value="0.02"/></label>
+<label>Dividend / carry yield (annual) <input id="qlDividend" step="0.001" type="number" value="0"/></label>
+<label>Volatility (annual) <input id="qlVolatility" max="5" min="0.00001" step="0.01" type="number" value="0.20"/></label>
+<label>Option type <select id="qlOptionType"><option value="call">Call</option><option value="put">Put</option></select></label>
+<label>Exercise style <select id="qlExercise"><option value="european">European</option><option value="american">American</option></select></label>
+<label>Pricing engine <select id="qlEngine"><option value="auto">Auto (recommended)</option><option value="analytic">Analytic (European only)</option><option value="binomial">CRR binomial tree</option></select></label>
+<label>Binomial steps <input id="qlSteps" max="1000" min="25" step="25" type="number" value="200"/></label>
+<label>Observed option premium (optional) <input id="qlMarketPrice" min="0" placeholder="For European implied volatility" step="any" type="number"/></label>
+</div>
+<div class="form-actions"><button class="btn btn-primary" onclick="runQuantLibOption()" type="button">Run QuantLib pricing + scenarios</button><button class="btn btn-ghost" onclick="loadQuantLibStatus()" type="button">Check engine</button></div>
+<div class="hero-grid" id="quantLibMetrics" style="margin-top:12px"></div>
+<div id="chartQuantLibScenarios" style="height:300px;width:100%"><div class="quant-chart-state"><strong>QuantLib scenario grid</strong><span>Reprices at spot shocks of −10%, 0%, +10% and volatility shocks of −5, 0, +5 percentage points.</span></div></div>
+<div class="muted" id="quantLibResult" style="margin-top:8px"></div>
+</div>
+</div></section><section aria-labelledby="quantTabBacktest" class="stage-panel" data-stage-panel="backtest" hidden="hidden" id="quantStageBacktest" role="tabpanel"><p class="muted stage-description">Quant strategy comparison. Review assumptions, costs and out-of-sample evidence before relying on results.</p><div class="panel chart-panel">
+<div class="panel-head"><div><div class="panel-kicker">STRATEGY EQUITY</div><h2>Causal backtests</h2></div></div>
+<div id="chartStrat" style="height:320px;width:100%"><div class="quant-chart-state"><strong>Strategy equity</strong><span>Waiting for the lightweight quant preview.</span></div></div>
+</div><div class="panel" style="margin-top:16px">
+<div class="panel-head"><div><div class="panel-kicker">STRATEGY TABLE</div><h2>Quant signals</h2></div></div>
+<div class="table-wrap">
+<table class="data-table">
+<thead><tr><th>Strategy</th><th>Sharpe</th><th>Sortino</th><th>Max DD</th><th>Final eq</th><th>Look-ahead gap</th></tr></thead>
+<tbody id="quantStratBody"><tr><td class="muted" colspan="6">Run to populate</td></tr></tbody>
+</table>
+</div>
+</div></section><section aria-labelledby="quantTabOptimizer" class="stage-panel" data-stage-panel="optimizer" hidden="hidden" id="quantStageOptimizer" role="tabpanel"><p class="muted stage-description">Compare in-sample and out-of-sample behavior. Small samples and repeated strategy selection can overstate performance.</p><div class="panel chart-panel">
+<div class="panel-head"><div><div class="panel-kicker">WALK-FORWARD</div><h2>IS vs OOS</h2></div></div>
+<div id="chartWF" style="height:320px;width:100%"><div class="quant-chart-state"><strong>Walk-forward analysis</strong><span>Waiting for the lightweight quant preview.</span></div></div>
+</div></section><section aria-labelledby="quantTabForecast" class="stage-panel" data-stage-panel="forecast" hidden="hidden" id="quantStageForecast" role="tabpanel"><p class="muted stage-description">Forecast intervals are conditional scenarios, not guarantees or calibrated trade probabilities.</p><div class="panel chart-panel" id="quantForecast" style="margin-top:16px">
+<div class="panel-head"><div><div class="panel-kicker">FORECAST DISTRIBUTION</div><h2>Scenario cone · Gaussian and block bootstrap</h2></div></div>
+<div id="chartForecast" style="height:320px;width:100%"><div class="quant-chart-state"><strong>Forecast waiting for data</strong><span>The forecast uses historical returns; intervals are scenarios, not guarantees.</span></div></div>
+<div class="muted" id="quantForecastSummary" style="margin-top:8px"></div>
+</div></section><section aria-labelledby="quantTabDocs" class="stage-panel" data-stage-panel="docs" hidden="hidden" id="quantStageDocs" role="tabpanel"><p class="muted stage-description">Definitions, formulas, data requirements and implementation notes for Quant &amp; ICE.</p><div aria-label="Quant methodology documentation" class="log-list" id="quantDocs" role="region" style="padding:12px 16px;max-height:560px;overflow:auto"><div class="quant-chart-state"><strong>Quant methodology</strong><span>Open this workspace to load formulas, engine descriptions and data assumptions.</span></div></div></section><section aria-labelledby="quantTabIce" class="stage-panel" data-stage-panel="ice" hidden="hidden" id="quantStageIce" role="tabpanel"><p class="muted stage-description">Five-layer confluence and grid levels. Grid levels are analytical output and do not authorize orders.</p><div class="panel chart-panel">
+<div class="panel-head"><div><div class="panel-kicker">ICE LAYERS</div><h2>5-layer confluence</h2></div></div>
+<div id="chartIce" style="height:320px;width:100%"><div class="quant-chart-state"><strong>ICE confluence ready to load</strong><span>Layer data will appear here after the first request.</span></div></div>
+</div><div class="panel" style="margin-top:16px">
+<div class="panel-head"><div><div class="panel-kicker">GRID LEVELS</div><h2 id="qGridTitle">—</h2></div></div>
+<div class="table-wrap">
+<table class="data-table">
+<thead><tr><th>Index</th><th>Side</th><th>Price</th><th>Lots</th><th>Filled</th></tr></thead>
+<tbody id="quantGridBody"><tr><td class="muted" colspan="5">Run to populate</td></tr></tbody>
+</table>
+</div>
+</div></section></div><div id="qEwma" style="display:none"></div><div id="qMc" style="display:none"></div></section><section class="page" id="portfolio">
+<div class="section-header"><div><div class="eyebrow">PORTFOLIO MANAGEMENT &amp; QUANTITATIVE RISK</div><h2>Portfolio command center</h2><p class="muted">Live broker book, research allocation, risk diagnostics, realized trading performance, stress scenarios and rebalance planning. Live account data and research estimates are kept separate.</p></div><span class="status-pill neutral" id="portfolioSourceBadge">BROKER DATA ON DEMAND</span></div>
+<div class="stage-tabs portfolio-tabs" id="portfolioTabs" role="tablist" aria-label="Portfolio workspaces">
+<button class="stage-tab active" data-portfolio-tab="overview" aria-selected="true" role="tab" type="button">Overview</button><button class="stage-tab" data-portfolio-tab="live" aria-selected="false" role="tab" type="button">Live Book</button><button class="stage-tab" data-portfolio-tab="allocation" aria-selected="false" role="tab" type="button">Allocation</button><button class="stage-tab" data-portfolio-tab="risk" aria-selected="false" role="tab" type="button">Risk &amp; Stress</button><button class="stage-tab" data-portfolio-tab="simulation" aria-selected="false" role="tab" type="button">Simulation</button><button class="stage-tab" data-portfolio-tab="performance" aria-selected="false" role="tab" type="button">Performance</button><button class="stage-tab" data-portfolio-tab="rebalance" aria-selected="false" role="tab" type="button">Rebalance</button>
+</div><div class="portfolio-panels" id="portfolioPanels">
+<section class="stage-panel active" data-portfolio-panel="overview" id="portfolioOverviewPanel" role="tabpanel">
+<div class="panel"><div class="panel-head"><div><div class="panel-kicker">PORTFOLIO SNAPSHOT</div><h2>Capital, exposure and current risk</h2><p class="muted">Live account numbers come from MT5. Allocation models use historical returns and are not the live book.</p></div><button class="btn btn-ghost" type="button" onclick="loadPortfolioLive(true)">Refresh snapshot</button></div><div class="muted" id="portfolioOverviewStatus" role="status">Opening the Portfolio workspace loads the live account when MT5 is connected.</div><div class="hero-grid" id="portfolioOverviewMetrics" style="margin-top:12px"><div class="quant-chart-state"><strong>Portfolio snapshot</strong><span>Waiting for a live broker snapshot.</span></div></div><div id="portfolioAccountHistoryChart" style="height:300px;width:100%;margin-top:12px"><div class="quant-chart-state"><strong>Observed account equity history</strong><span>Samples are stored when the live Portfolio snapshot is requested. Historical TWR is not inferred from sparse snapshots.</span></div></div></div>
+<div class="grid-2" style="margin-top:14px"><div class="panel"><div class="panel-head"><div><div class="panel-kicker">LARGEST SYMBOL CONTRIBUTIONS</div><h2>Open-book P&amp;L</h2></div></div><div class="table-wrap"><table class="data-table"><thead><tr><th>Symbol</th><th>Positions</th><th>Buy lots</th><th>Sell lots</th><th>Floating P&amp;L</th></tr></thead><tbody id="portfolioOverviewSymbols"><tr><td colspan="5" class="muted">Waiting for broker snapshot.</td></tr></tbody></table></div></div><div class="panel"><div class="panel-head"><div><div class="panel-kicker">WORKFLOW</div><h2>Portfolio actions</h2></div></div><div class="form-actions"><button class="btn btn-primary" type="button" onclick="setPortfolioTab('live')">Inspect live book</button><button class="btn btn-ghost" type="button" onclick="setPortfolioTab('allocation')">Build allocation</button><button class="btn btn-ghost" type="button" onclick="setPortfolioTab('risk')">Run stress analysis</button><button class="btn btn-ghost" type="button" onclick="setPortfolioTab('performance')">Review performance</button></div><p class="muted" style="margin-top:10px">Research tools do not submit rebalancing orders. Live execution stays behind existing risk gates and explicit controls.</p></div></div>
+</section>
+<section class="stage-panel" data-portfolio-panel="live" id="portfolioLivePanel" role="tabpanel" hidden>
+<div class="panel"><div class="panel-head"><div><div class="panel-kicker">LIVE HOLDINGS · MT5</div><h2>Positions and stop coverage</h2><p class="muted">Stop-loss risk uses the broker profit calculator. Positions without a stop are flagged unprotected; their risk is not guessed.</p></div><button class="btn btn-ghost" type="button" onclick="loadPortfolioLive(true)">Refresh</button></div><div class="muted" id="portfolioLiveStatus" role="status">Not loaded.</div><div class="table-wrap"><table class="data-table"><thead><tr><th>Ticket</th><th>Symbol</th><th>Side</th><th>Lots</th><th>Open</th><th>Current</th><th>SL</th><th>TP</th><th>Profit</th><th>Swap</th><th>Stop risk</th><th>Status</th></tr></thead><tbody id="portfolioLivePositionsBody"><tr><td class="muted" colspan="12">Waiting for broker data.</td></tr></tbody></table></div></div>
+<div class="panel" style="margin-top:14px"><div class="panel-head"><div><div class="panel-kicker">SYMBOL EXPOSURE</div><h2>Book concentration by instrument</h2><p class="muted">Lots are grouped by symbol. Mixed contract notionals are not summed into a misleading single currency number.</p></div></div><div class="table-wrap"><table class="data-table"><thead><tr><th>Symbol</th><th>Positions</th><th>Buy lots</th><th>Sell lots</th><th>Net lots</th><th>Open P&amp;L</th><th>No-SL positions</th><th>Known SL risk</th></tr></thead><tbody id="portfolioLiveExposureBody"><tr><td colspan="8" class="muted">Waiting for broker data.</td></tr></tbody></table></div></div>
+<div class="panel" style="margin-top:14px"><div class="panel-head"><div><div class="panel-kicker">PENDING ORDERS</div><h2>Unfilled broker orders</h2></div></div><div class="table-wrap"><table class="data-table"><thead><tr><th>Ticket</th><th>Symbol</th><th>Type</th><th>Volume</th><th>Entry</th><th>SL</th><th>TP</th><th>Created</th></tr></thead><tbody id="portfolioLiveOrdersBody"><tr><td colspan="8" class="muted">Waiting for broker data.</td></tr></tbody></table></div></div>
+</section>
+<section class="stage-panel" data-portfolio-panel="allocation" id="portfolioAllocationPanel" role="tabpanel" hidden><div class="muted" style="margin:4px 0 10px">Research allocation uses aligned broker D1 returns. Capital weights are not broker lot sizes. Build an allocation before generating a rebalance proposal.</div>
+<div class="panel" id="portfolioWorkspace" style="margin-top:16px">
+<div class="panel-head"><div><div class="panel-kicker">PORTFOLIO RESEARCH · MT5 D1 HISTORY</div><h2>Portfolio allocation &amp; risk analysis</h2><p class="muted">Uses aligned, real MT5 D1 closes. Long-only allocations are research estimates, not order instructions.</p></div></div>
+<div class="form-grid">
+<label>Broker symbols (2–12, comma-separated)<input id="quantPortfolioSymbols" placeholder="XAUUSD, EURUSD, GBPUSD" type="text" value="XAUUSD, EURUSD, GBPUSD"/></label>
+<label>Daily bars<input id="quantPortfolioBars" max="2500" min="60" type="number" value="400"/></label>
+<label>Reference capital<input id="quantPortfolioCapital" min="1" step="100" type="number" value="10000"/></label>
+<label>Risk-free rate (annual)<input id="quantPortfolioRf" max="0.25" min="-0.05" step="0.005" type="number" value="0.02"/></label>
+<label>Per-asset weight cap<input id="quantPortfolioMaxWeight" max="1" min="0.1" step="0.05" type="number" value="0.60"/></label>
+<label>Transaction cost (bps / side)<input id="quantPortfolioCostBps" max="500" min="0" step="1" type="number" value="5"/></label>
+</div>
+<div class="form-actions"><button class="btn btn-primary" onclick="runQuantPortfolio()" type="button">Build portfolio</button><span class="muted" id="quantPortfolioStatus">Waiting for a requested portfolio run.</span></div>
+<div id="chartPortfolio" style="height:300px;width:100%"><div class="quant-chart-state"><strong>Portfolio not yet calculated</strong><span>Enter symbols available on your broker, then build the portfolio.</span></div></div>
+<div class="hero-grid" id="quantPortfolioMetrics" style="margin-top:12px"></div>
+<div class="hero-grid" id="quantPortfolioRiskMetrics" style="margin-top:8px"></div>
+<div class="panel" style="margin-top:12px;padding:12px">
+<div class="panel-head"><div><div class="panel-kicker">DEPENDENCE &amp; DIVERSIFICATION</div><h2>Historical return correlation</h2><p class="muted">Estimated from aligned D1 simple returns. Correlation is descriptive and can change sharply in stressed markets.</p></div></div>
+<div id="chartPortfolioCorr" style="height:320px;width:100%"><div class="quant-chart-state"><strong>Correlation not calculated</strong><span>Build a portfolio to inspect pairwise dependence.</span></div></div>
+</div>
+<div class="panel" style="margin-top:12px;padding:12px"><div class="panel-head"><div><div class="panel-kicker">RISK / RETURN TRADE-OFF</div><h2>Constrained efficient frontier</h2><p class="muted">Frontier points are estimates from aligned historical returns, annualized with a daily 252-session convention. Fallback points may be feasible interpolations rather than globally efficient solutions.</p></div></div><div id="chartPortfolioFrontier" style="height:340px;width:100%"><div class="quant-chart-state"><strong>Efficient frontier not calculated</strong><span>Build a research portfolio to compare estimated return versus volatility.</span></div></div></div>
+<div class="table-wrap" style="margin-top:12px"><table class="data-table"><thead><tr><th>Symbol</th><th>Max-Sharpe weight</th><th>Max-Sharpe risk share</th><th>Min-variance weight</th><th>Min-variance risk share</th><th>Risk-parity weight</th><th>Risk-parity risk share</th><th>Capital allocation</th></tr></thead><tbody id="quantPortfolioBody"><tr><td class="muted" colspan="8">Run to populate from MT5 D1 history.</td></tr></tbody></table></div>
+</div>
+</section>
+<section class="stage-panel" data-portfolio-panel="risk" id="portfolioRiskPanel" role="tabpanel" hidden>
+<div class="panel"><div class="panel-head"><div><div class="panel-kicker">LIVE BOOK STRESS</div><h2>Broker-calculated price shock scenarios</h2><p class="muted">Applies the same percentage shock to each open instrument and uses MT5's profit calculator for incremental P&amp;L in account currency. This is not a correlation-aware factor model.</p></div></div><div class="form-grid"><label>Price shocks (%) comma-separated<input id="portfolioStressShocks" type="text" value="-10, -5, -2, 2, 5, 10"/></label></div><div class="form-actions"><button class="btn btn-primary" type="button" onclick="runPortfolioStress()">Run stress test</button><span class="muted" id="portfolioStressStatus">Requires a connected MT5 account.</span></div><div id="portfolioStressChart" style="height:340px;width:100%"><div class="quant-chart-state"><strong>Stress analysis not run</strong><span>Enter price shocks and run the portfolio stress calculator.</span></div></div><div class="table-wrap"><table class="data-table"><thead><tr><th>Instrument-price shock</th><th>Incremental P&amp;L</th><th>Estimated equity</th><th>Covered positions</th><th>Unpriced</th></tr></thead><tbody id="portfolioStressBody"><tr><td colspan="5" class="muted">No scenarios calculated.</td></tr></tbody></table></div></div>
+<div class="panel" style="margin-top:14px"><div class="panel-head"><div><div class="panel-kicker">RESEARCH RISK</div><h2>Allocation model risk metrics</h2><p class="muted">Build the research allocation to calculate historical VaR/CVaR, drawdown, downside deviation, diversification and cost sensitivity.</p></div><button class="btn btn-ghost" type="button" onclick="setPortfolioTab('allocation')">Open allocation</button></div><div class="hero-grid" id="portfolioRiskResearchMetrics"><div class="quant-chart-state"><strong>No research model yet</strong><span>Run an allocation to populate historical risk diagnostics.</span></div></div></div>
+</section>
+<section class="stage-panel" data-portfolio-panel="simulation" id="portfolioSimulationPanel" role="tabpanel" hidden>
+<div class="panel"><div class="panel-head"><div><div class="panel-kicker">FINANCE TOOLKIT · PORTFOLIO SIMULATION</div><h2>Monte Carlo scenarios and investment-path comparison</h2><p class="muted">Uses historical MT5 D1 returns to parameterize a correlated geometric-Brownian-motion scenario model, or compares lump-sum and DCA paths for one symbol. Distributions are illustrative, not forecasts.</p></div><span class="status-pill neutral" id="portfolioSimulationBadge">RESEARCH ONLY</span></div>
+<div class="form-grid"><label>Broker symbols (1–8; comma-separated)<input id="portfolioSimulationSymbols" type="text" value="XAUUSD,EURUSD,GBPUSD" maxlength="400"/></label><label>Scenario method<select id="portfolioSimulationMethod"><option value="monte_carlo" selected>Correlated Monte Carlo</option><option value="dca">Lump sum vs DCA (one symbol)</option></select></label><label>Historical daily bars<input id="portfolioSimulationBars" type="number" min="80" max="2500" value="500"/></label><label>Starting capital<input id="portfolioSimulationCapital" type="number" min="100" step="100" value="10000"/></label><label>Scenario horizon (years)<input id="portfolioSimulationYears" type="number" min="0.1" max="20" step="0.5" value="1"/></label><label>Paths<input id="portfolioSimulationPaths" type="number" min="100" max="1000" step="100" value="500"/></label><label>DCA installments<input id="portfolioSimulationInstallments" type="number" min="2" max="120" value="12"/></label></div>
+<div class="form-actions"><button class="btn btn-primary" type="button" onclick="runFinancePortfolioSimulation()">Run portfolio scenario</button><span class="muted" id="portfolioSimulationStatus" role="status">Waits for an explicit request; it does not run during every dashboard poll.</span></div>
+<div class="hero-grid" id="portfolioSimulationMetrics" style="margin-top:12px"><div class="quant-chart-state"><strong>No scenario run</strong><span>Choose a method and request a scenario.</span></div></div>
+<div id="portfolioSimulationChart" style="height:340px;width:100%;margin-top:12px"><div class="quant-chart-state"><strong>Scenario distribution</strong><span>Percentile paths will appear after a successful run.</span></div></div><div class="muted" id="portfolioSimulationNotes" style="margin-top:8px"></div>
+</div>
+</section>
+<section class="stage-panel" data-portfolio-panel="performance" id="portfolioPerformancePanel" role="tabpanel" hidden>
+<div class="panel"><div class="panel-head"><div><div class="panel-kicker">BROKER TRADE HISTORY</div><h2>Realized trade performance</h2><p class="muted">Derived from closed MT5 position deals. This is not a GIPS-compliant time-weighted return or account-equity curve.</p></div></div><div class="form-grid"><label>History window<select id="portfolioPerfDays"><option value="30">Last 30 days</option><option selected value="90">Last 90 days</option><option value="180">Last 180 days</option><option value="365">Last 365 days</option><option value="1095">Last 3 years</option></select></label></div><div class="form-actions"><button class="btn btn-primary" type="button" onclick="loadPortfolioPerformance(true)">Load trade performance</button><span class="muted" id="portfolioPerformanceStatus">Performance history has not been loaded.</span></div><div class="hero-grid" id="portfolioPerformanceMetrics" style="margin-top:12px"><div class="quant-chart-state"><strong>No performance report</strong><span>Select a window and load actual broker trade history.</span></div></div><div id="portfolioPerformanceChart" style="height:320px;width:100%"><div class="quant-chart-state"><strong>Cumulative realized P&amp;L</strong><span>Will display when broker trade history is available.</span></div></div><div class="table-wrap"><table class="data-table"><thead><tr><th>Symbol</th><th>Closed trades</th><th>Win rate</th><th>Net realized P&amp;L</th><th>Profit factor</th></tr></thead><tbody id="portfolioPerfSymbols"><tr><td colspan="5" class="muted">No report loaded.</td></tr></tbody></table></div><div class="panel" style="margin-top:12px;padding:12px"><div class="panel-head"><div><div class="panel-kicker">STRATEGY / EA ATTRIBUTION</div><h2>Performance by MT5 magic number</h2><p class="muted">Broker deal magic numbers are used as attribution buckets; the mapping to strategy names depends on your configured magic-number conventions.</p></div></div><div class="table-wrap"><table class="data-table"><thead><tr><th>Magic number</th><th>Closed trades</th><th>Win rate</th><th>Net P&amp;L</th><th>Profit factor</th></tr></thead><tbody id="portfolioPerfMagic"><tr><td colspan="5" class="muted">No attribution loaded.</td></tr></tbody></table></div></div><div class="table-wrap" style="margin-top:12px"><table class="data-table"><thead><tr><th>Position ID</th><th>Symbol</th><th>Closed at</th><th>Net P&amp;L</th><th>Deal legs in window</th></tr></thead><tbody id="portfolioPerfTrades"><tr><td colspan="5" class="muted">No completed trades loaded.</td></tr></tbody></table></div></div>
+
+<div class="panel" id="tradeHistoryLearningPanel" style="margin-top:14px"><div class="panel-head"><div><div class="panel-kicker">SHARED TRADE HISTORY &amp; STRATEGY LEARNING</div><h2>Broker outcomes → research evidence</h2><p class="muted">Imports MT5 deal legs, reconciles completed positions including commission, swap and fees, and shares prior-only outcome context with analysis agents. This is descriptive evidence, not an automatic strategy switch or trading signal.</p></div></div><div class="form-grid"><label>Import lookback<select id="tradeLearningDays"><option value="30">Last 30 days</option><option value="90">Last 90 days</option><option value="365" selected>Last 365 days</option><option value="1095">Last 3 years</option><option value="3650">Maximum 10 years</option></select></label></div><div class="form-actions"><button class="btn btn-primary" type="button" onclick="syncTradeHistoryAndLearn()">Sync MT5 history &amp; update learning</button><button class="btn btn-ghost" type="button" onclick="loadTradeLearningSummary(true)">Refresh saved history</button><span class="muted" id="tradeLearningStatus" role="status">History has not been loaded from the learning store.</span></div><div class="hero-grid" id="tradeLearningMetrics" style="margin-top:12px"><div class="quant-chart-state"><strong>Trade history not synced</strong><span>Sync broker history to build symbol/magic-number outcomes. No orders are sent.</span></div></div><div class="grid-2" style="margin-top:12px"><div class="panel" style="padding:12px"><div class="panel-head"><div><div class="panel-kicker">SYMBOL ATTRIBUTION</div><h3>Results by instrument</h3></div></div><div class="table-wrap"><table class="data-table"><thead><tr><th>Symbol</th><th>Trades</th><th>Win rate</th><th>Expectancy</th><th>Net P&amp;L</th><th>PF</th></tr></thead><tbody id="tradeLearningSymbols"><tr><td colspan="6" class="muted">Sync MT5 trade history first.</td></tr></tbody></table></div></div><div class="panel" style="padding:12px"><div class="panel-head"><div><div class="panel-kicker">EA / STRATEGY ATTRIBUTION</div><h3>Results by magic number</h3></div></div><div class="table-wrap"><table class="data-table"><thead><tr><th>Magic</th><th>Trades</th><th>Win rate</th><th>Expectancy</th><th>Net P&amp;L</th><th>PF</th></tr></thead><tbody id="tradeLearningMagic"><tr><td colspan="6" class="muted">Sync MT5 trade history first.</td></tr></tbody></table></div></div></div><div class="panel" style="margin-top:12px;padding:12px"><div class="panel-head"><div><div class="panel-kicker">POINT-IN-TIME MARKET REGIME</div><h3>Results by recorded decision regime</h3><p class="muted">Only matched decision records can provide a regime label. Unknown means the historical decision did not store usable regime evidence.</p></div></div><div class="table-wrap"><table class="data-table"><thead><tr><th>Regime</th><th>Trades</th><th>Win rate</th><th>Expectancy</th><th>Net P&amp;L</th></tr></thead><tbody id="tradeLearningRegimes"><tr><td colspan="5" class="muted">No matched regime data yet.</td></tr></tbody></table></div></div><div class="panel" style="margin-top:12px;padding:12px"><div class="panel-head"><div><div class="panel-kicker">RECONCILED POSITIONS</div><h3>Recent completed position outcomes</h3></div></div><div class="table-wrap"><table class="data-table"><thead><tr><th>Position ID</th><th>Symbol</th><th>Magic</th><th>Side</th><th>Closed (UTC)</th><th>Gross P&amp;L</th><th>Commission</th><th>Swap</th><th>Fee</th><th>Net P&amp;L</th><th>Decision match</th></tr></thead><tbody id="tradeLearningRecent"><tr><td colspan="11" class="muted">No reconciled positions.</td></tr></tbody></table></div></div><p class="muted" id="tradeLearningNotes" style="margin-top:10px">The agent context uses closed positions before the analysis timestamp only. Statistics require at least 10 completed positions before win-rate/expectancy are supplied to analysts.</p></div>
+<div class="panel" id="portfolioAccountAnalyticsPanel" style="margin-top:14px"><div class="panel-head"><div><div class="panel-kicker">ACCOUNT PERFORMANCE &amp; CASH-FLOW RECONCILIATION</div><h2>Equity-based return analytics</h2><p class="muted">Uses persisted account-equity observations and MT5 balance operations. Modified Dietz linking and XIRR are estimates, not GIPS-compliant reporting; unresolved credit/correction/bonus entries withhold adjusted returns.</p></div></div><div class="form-grid"><label>Benchmark symbol (exact broker name)<input id="portfolioBenchmarkSymbol" type="text" maxlength="64" placeholder="e.g. US500, SPX500 or your broker's index symbol"/></label><label>Additional factor-proxy symbols (up to 5)<input id="portfolioFactorProxySymbols" type="text" maxlength="320" placeholder="e.g. XAUUSD, EURUSD (broker instruments, not academic factors)"/></label></div><div class="form-actions"><button class="btn btn-primary" type="button" onclick="loadPortfolioAnalytics(true)">Calculate account / benchmark analytics</button><span class="muted" id="portfolioAccountAnalyticsStatus" role="status">Account return analytics have not been loaded.</span></div><div class="hero-grid" id="portfolioAccountAnalyticsMetrics" style="margin-top:12px"><div class="quant-chart-state"><strong>Cash-flow adjusted performance</strong><span>Run analysis to inspect return estimates and snapshot quality.</span></div></div><div id="portfolioBenchmarkChart" style="height:320px;width:100%;margin-top:12px"><div class="quant-chart-state"><strong>Benchmark-relative growth</strong><span>Enter an exact benchmark symbol from your MT5 broker to compare matched daily returns.</span></div></div><div class="panel" style="margin-top:12px;padding:12px"><div class="panel-head"><div><div class="panel-kicker">FACTOR REGRESSION</div><h2>Exposure to broker instrument proxies</h2><p class="muted">OLS estimates the portfolio's sensitivity to selected daily instrument returns. These are user-selected market proxies, not a canonical Fama–French or tradable factor dataset.</p></div></div><div class="table-wrap"><table class="data-table"><thead><tr><th>Proxy symbol</th><th>Beta</th><th>Approx. t-stat</th></tr></thead><tbody id="portfolioFactorProxyBody"><tr><td colspan="3" class="muted">Enter benchmark/factor symbols and calculate.</td></tr></tbody></table></div><div class="muted" id="portfolioFactorModelStatus" style="margin-top:8px">Factor regression requires at least 30 aligned return observations, with a higher minimum for additional factors.</div></div><div class="panel" style="margin-top:12px;padding:12px"><div class="panel-head"><div><div class="panel-kicker">CASH-FLOW AUDIT</div><h2>Balance flows and adjustments</h2><p class="muted">MT5 balance deals are treated as cash-flow candidates. Credits, corrections and bonuses are separated for review so they cannot silently bias performance.</p></div></div><div class="table-wrap"><table class="data-table"><thead><tr><th>Time (UTC)</th><th>Deal type</th><th>Classification</th><th>Amount</th><th>Comment</th></tr></thead><tbody id="portfolioAccountCashflowsBody"><tr><td colspan="5" class="muted">No cash-flow audit loaded.</td></tr></tbody></table></div></div><div class="muted" id="portfolioAccountAnalyticsNotes" style="margin-top:10px"></div></div>
+</section>
+<section class="stage-panel" data-portfolio-panel="rebalance" id="portfolioRebalancePanel" role="tabpanel" hidden>
+<div class="panel"><div class="panel-head"><div><div class="panel-kicker">REBALANCE PLANNING</div><h2>Target versus current allocation</h2><p class="muted">Build an allocation first. Enter current weights explicitly; mixed MT5 contracts cannot safely be converted into account-currency weights without valuation/conversion logic. This tool does not place orders.</p></div></div><div class="form-grid"><label>Target method<select id="portfolioRebalanceMethod"><option value="max_sharpe">Max Sharpe</option><option value="min_variance">Minimum variance</option><option value="risk_parity">Risk parity</option><option value="inverse_volatility">Inverse volatility</option><option value="equal_weight">Equal weight</option></select></label><label>Current weights (symbol=weight)<input id="portfolioCurrentWeights" type="text" placeholder="XAUUSD=0.40, EURUSD=0.35, GBPUSD=0.25" value="XAUUSD=0.40, EURUSD=0.35, GBPUSD=0.25"/></label><label>Reference capital<input id="portfolioRebalanceCapital" type="number" min="1" step="100" value="10000"/></label><label>Estimated cost (bps per side)<input id="portfolioRebalanceCost" type="number" min="0" max="500" step="1" value="5"/></div><div class="form-actions"><button class="btn btn-primary" type="button" onclick="buildPortfolioRebalance()">Build rebalance proposal</button><span class="muted" id="portfolioRebalanceStatus">Run an allocation first.</span></div><div class="hero-grid" id="portfolioRebalanceMetrics" style="margin-top:12px"></div><div class="table-wrap"><table class="data-table"><thead><tr><th>Symbol</th><th>Current weight</th><th>Target weight</th><th>Change</th><th>Action</th><th>Current value</th><th>Target value</th><th>Estimated cost</th></tr></thead><tbody id="portfolioRebalanceBody"><tr><td colspan="8" class="muted">No proposal generated.</td></tr></tbody></table></div></div>
+</section>
+</div></section>
+<section class="page" id="shadow">
+<div class="section-header">
+<div><div class="eyebrow">SHADOW ACCOUNT</div><h2>Paper / shadow performance</h2></div>
+</div>
+<div class="panel" id="shadowBody">
+<div class="muted">Shadow account data will appear here when paper fills are recorded.</div>
+</div>
+</section>
+<!-- RUNBOOKS -->
+<section class="page" id="runbooks">
+<div class="section-header">
+<div><div class="eyebrow">RUN CARDS</div><h2>Recent cycle cards</h2></div>
+</div>
+<div class="log-list" id="runbooksList"></div>
+</section>
+<!-- STRATEGIES -->
+<section class="page" id="strategies">
+<div class="section-header">
+<div><div class="eyebrow">STRATEGY REGISTRY</div><h2>Registered production &amp; research strategies</h2></div>
+</div>
+<div class="log-list" id="strategiesList"></div>
+</section>
+<!-- EVENTS -->
+<section class="page" id="events">
+<div class="section-header">
+<div><div class="eyebrow">EVENTS &amp; ERRORS</div><h2>System log stream</h2></div>
+</div>
+<div class="panel">
+<div class="panel-head"><div><div class="panel-kicker">RECENT EVENTS</div><h2>Operational log</h2></div></div>
+<div class="log-list" id="eventsLog"></div>
+<div class="pager" id="eventsPager"></div>
+</div>
+<div class="panel" style="margin-top:14px">
+<div class="panel-head"><div><div class="panel-kicker">ERRORS</div><h2>Recent failures</h2></div></div>
+<div class="log-list" id="errorsLog"></div>
+</div>
+</section>
+<!-- SETTINGS -->
+<section class="page" id="settings">
+<div class="section-header">
+<div><div class="eyebrow">SYSTEM SETTINGS</div><h2>Runtime configuration</h2></div>
+<button class="btn btn-primary" id="saveSettingsBtn" onclick="saveSettings()" type="button">Save All Settings</button>
+</div>
+<p class="muted" style="margin-bottom:14px">Operational controls only. Secrets (API keys, broker passwords, tokens) are never shown or editable here. Live arming stays on the top bar for safety.</p>
+<div class="panel">
+<div class="panel-head"><div><div class="panel-kicker">TRADING MODE</div><h2>Paper / Live, arm, and kill switch</h2></div>
+<span class="status-pill neutral" id="setModeBadge">—</span>
+</div>
+<div class="form-grid">
+<label>Trading mode
+              <select id="setTradingMode">
+<option value="PAPER">PAPER (simulated fills)</option>
+<option value="LIVE">LIVE (broker orders when armed)</option>
+</select>
+</label>
+</div>
+<div class="form-row check-row" style="margin-top:12px">
+<label class="toggle"><input id="setLiveExecutionEnabled" type="checkbox"/><span class="toggle-ui"></span> Live execution enabled</label>
+<label class="toggle"><input id="setLiveArmed" type="checkbox"/><span class="toggle-ui"></span> Live armed</label>
+<label class="toggle"><input checked="" id="setKillSwitch" type="checkbox"/><span class="toggle-ui"></span> Kill switch ON (blocks new entries)</label>
+</div>
+<p class="muted" style="margin-top:10px"><b>You control these freely.</b> LIVE + armed + kill OFF can send real broker orders when MT5 is connected and AutoTrading is on. Prefer PAPER until the pipeline shows consistent plans. Top-bar ARM / KILL still work as shortcuts.</p>
+</div>
+<div class="panel" style="margin-top:14px">
+<div class="panel-head"><div><div class="panel-kicker">SYMBOLS &amp; CYCLE</div><h2>Primary instrument, watchlist, analysis cadence</h2></div></div>
+<div class="form-grid">
+<label>Primary symbol <select id="setSymbol"></select></label>
+<label>Watchlist (comma-separated)
+              <input id="setWatchlist" placeholder="XAUUSD, EURUSD, GBPUSD" type="text"/>
+</label>
+<label>Default timeframe
+              <select id="setTimeframe">
+<option value="M1">M1</option>
+<option selected="" value="M5">M5</option>
+<option value="M15">M15</option>
+<option value="M30">M30</option>
+<option value="H1">H1</option>
+<option value="H4">H4</option>
+<option value="D1">D1</option>
+</select>
+</label>
+<label>Cycle interval (sec)
+              <input id="setInterval" max="300" min="1" type="number" value="5"/>
+</label>
+<label>Lookback bars
+              <input id="setLookback" max="2000" min="50" type="number" value="300"/>
+</label>
+<label>AI / mesh analysis interval (sec)
+              <input id="setAiInterval" max="3600" min="10" type="number" value="60"/>
+</label>
+</div>
+</div>
+<div class="panel" style="margin-top:14px">
+<div class="panel-head"><div><div class="panel-kicker">BACKTEST &amp; OPTIMIZE</div><h2>Default lab parameters</h2></div></div>
+<div class="form-grid">
+<label>Default symbol <input id="setBtSymbol" type="text" value="XAUUSD"/></label>
+<label>Default strategy
+              <select id="setBtStrategy">
+<option value="trend_following">trend_following</option>
+<option value="mean_reversion">mean_reversion</option>
+<option value="breakout">breakout</option>
+<option value="momentum_burst">momentum_burst</option>
+<option value="session_liquidity">session_liquidity</option>
+<option value="order_flow_continuation">order_flow_continuation</option>
+<option value="absorption_fade">absorption_fade</option>
+</select>
+</label>
+<label>Default bars <input id="setBtBars" max="50000" min="500" type="number" value="3000"/></label>
+<label>Default equity <input id="setBtEquity" min="100" type="number" value="10000"/></label>
+<label>Default risk % <input id="setBtRisk" max="5" min="0.05" step="0.05" type="number" value="0.5"/></label>
+<label>Execution model
+              <select id="setBtExecutionModel">
+<option value="ohlc">OHLC</option>
+<option value="ticks">Ticks</option>
+</select>
+</label>
+<label>Objective
+              <select id="setBtObjective">
+<option value="composite">composite</option>
+<option value="sharpe">sharpe</option>
+<option value="profit_factor">profit_factor</option>
+<option value="expectancy">expectancy</option>
+<option value="calmar">calmar</option>
+<option value="net_pnl">net_pnl</option>
+</select>
+</label>
+<label>Max optimize trials <input id="setBtTrials" max="200" min="5" type="number" value="40"/></label>
+<label>Walk-forward folds <input id="setBtFolds" max="12" min="2" type="number" value="4"/></label>
+<label>IS ratio <input id="setBtIsRatio" max="0.9" min="0.5" step="0.05" type="number" value="0.7"/></label>
+<label>Commission bps <input id="setBtCommission" min="0" step="0.1" type="number" value="0"/></label>
+</div>
+<p class="muted" style="margin-top:8px">Saved with Settings. Open <b>Backtest Lab</b> and click “Load from Settings”, or lab fields auto-fill on page open.</p>
+</div>
+<div class="panel" style="margin-top:14px">
+<div class="panel-head"><div><div class="panel-kicker">LOCAL LLM (OLLAMA)</div><h2>Research AI + setup enrichment</h2></div></div>
+<div class="form-row check-row">
+<label class="toggle"><input checked="" id="setLocalAiEnabled" type="checkbox"/><span class="toggle-ui"></span> Enable local AI (Ollama)</label>
+<label class="toggle"><input checked="" id="setLocalAiTiered" type="checkbox"/><span class="toggle-ui"></span> Tiered 1.5b → 3b</label>
+<label class="toggle"><input checked="" id="setLocalAiInfluence" type="checkbox"/><span class="toggle-ui"></span> Soft-influence analysis (not risk gates)</label>
+</div>
+<div class="form-grid" style="margin-top:12px">
+<label>Base URL
+              <input id="setLocalAiBaseUrl" type="text" value="http://127.0.0.1:11434/v1"/>
+</label>
+<label>Gate model
+              <input id="setLocalAiGateModel" type="text" value="qwen2.5:1.5b"/>
+</label>
+<label>Deep model
+              <input id="setLocalAiDeepModel" type="text" value="qwen2.5:3b"/>
+</label>
+</div>
+<p class="muted" style="margin-top:8px">
+            AI ranks multi-asset setups, explains confluence, and can soft-tilt the mesh when influence is on.
+            Risk gates + paper/live still authorize every order. Requires Ollama running with the listed models.
+          </p>
+</div>
+<div class="panel" style="margin-top:14px">
+<div class="panel-head"><div><div class="panel-kicker">TRADE UNIVERSE</div><h2>Execute setups across scanned symbols</h2></div></div>
+<div class="form-row check-row">
+<label class="toggle"><input checked="" id="setAutoTrade" type="checkbox"/><span class="toggle-ui"></span> Auto-trade (paper/live when armed)</label>
+<label class="toggle"><input checked="" id="setTradeUniverseEnabled" type="checkbox"/><span class="toggle-ui"></span> Trade secondary (universe) symbols</label>
+</div>
+<div class="form-grid" style="margin-top:12px">
+<label>Max universe entries / minute
+              <input id="setTradeUniverseMaxPerCycle" max="200" min="1" type="number" value="15"/>
+</label>
+<label>Max open positions (see Risk section below)
+              <input disabled="" id="setMaxPositionsHint" max="200" min="1" title="Edit Max positions under Risk limits" type="number" value="15"/>
+</label>
+</div>
+<p class="muted" style="margin-top:8px">
+            Analysis without universe trading only scores symbols. Turn <b>Trade secondary symbols</b> on
+            and raise max positions so gold and other setups can fill when the plan is approved.
+          </p>
+</div>
+<div class="panel" style="margin-top:14px">
+<div class="panel-head"><div><div class="panel-kicker">UNIVERSE SCANNER</div><h2>All-symbol broker scan</h2></div></div>
+<div class="form-row check-row">
+<label class="toggle">
+<input id="setAnalyzeAllSymbols" type="checkbox"/>
+<span class="toggle-ui"></span>
+              Enable all-symbol analysis
+            </label>
+</div>
+<div class="form-grid" style="margin-top:12px">
+<label>Scan limit (0 = all broker symbols)
+              <input id="setSymbolScanLimit" max="1000000" min="0" type="number" value="0"/>
+</label>
+<label>Batch size per dispatch
+              <input id="setSymbolScanBatchSize" max="100" min="1" type="number" value="25"/>
+</label>
+<label>Rescan interval (sec)
+              <input id="setSymbolRescanSeconds" max="3600" min="10" type="number" value="300"/>
+</label>
+</div>
+<p class="muted" style="margin-top:8px">A scan limit of 0 means the full broker catalogue is scanned continuously. Symbols with restricted or unverified contracts may be researched, but execution remains blocked by the normal pipeline gates.</p>
+</div>
+<div class="panel" style="margin-top:14px">
+<div class="panel-head"><div><div class="panel-kicker">MARKET DESKS</div><h2>Enable / disable specialist directors</h2></div></div>
+<div class="form-row check-row desks-toggles">
+<label class="toggle"><input checked="" id="setDeskForex" type="checkbox"/><span class="toggle-ui"></span> Forex</label>
+<label class="toggle"><input checked="" id="setDeskStocks" type="checkbox"/><span class="toggle-ui"></span> Stocks</label>
+<label class="toggle"><input checked="" id="setDeskCrypto" type="checkbox"/><span class="toggle-ui"></span> Crypto</label>
+<label class="toggle"><input checked="" id="setDeskCfd" type="checkbox"/><span class="toggle-ui"></span> CFD</label>
+<label class="toggle"><input checked="" id="setDeskConvert" type="checkbox"/><span class="toggle-ui"></span> Convert</label>
+<label class="toggle"><input checked="" id="setDeskIndices" type="checkbox"/><span class="toggle-ui"></span> Indices</label>
+</div>
+</div>
+<div class="panel" style="margin-top:14px">
+<div class="panel-head"><div><div class="panel-kicker">DEBATE FLOOR / CLASSICAL CONSENSUS</div><h2>Agreement thresholds (numerical agents)</h2></div></div>
+<div class="form-grid">
+<label>Consensus threshold (0.40–0.85)
+              <input id="setConsensusThreshold" max="0.85" min="0.40" step="0.01" type="number" value="0.48"/>
+</label>
+<label>Strong research override min confidence
+              <input id="setStrongOverride" max="0.95" min="0.60" step="0.01" type="number" value="0.72"/>
+</label>
+<label>Min decision confidence (risk gate)
+              <input id="setMinDecisionConfidence" max="0.95" min="0.40" step="0.01" type="number" value="0.48"/>
+</label>
+<label>Min reward:risk (R:R)
+              <input id="setMinRewardRisk" max="5.0" min="1.0" step="0.1" type="number" value="1.8"/>
+</label>
+</div>
+<p class="muted" style="margin-top:8px">Higher consensus = fewer trades, stricter agreement. Strong override lets high-confidence classical research authorize when family-share is fragmented.</p>
+</div>
+<div class="panel" style="margin-top:14px">
+<div class="panel-head"><div><div class="panel-kicker">RISK LIMITS</div><h2>Capital protection gates</h2></div></div>
+<div class="form-grid">
+<label>Max risk per trade (% equity)
+              <input id="setMaxPositionRiskPct" max="5" min="0.05" step="0.05" type="number" value="0.40"/>
+</label>
+<label>Max daily loss (% equity)
+              <input id="setMaxDailyLossPct" max="20" min="0.1" step="0.1" type="number" value="1.5"/>
+</label>
+<label>Max portfolio exposure (% equity)
+              <input id="setMaxExposurePct" max="50" min="1" step="0.5" type="number" value="8"/>
+</label>
+<label>Risk fraction (sizing)
+              <input id="setRiskFraction" max="0.05" min="0.001" step="0.001" type="number" value="0.005"/>
+</label>
+<label>Max open positions
+              <input id="setMaxPositions" max="200" min="1" type="number" value="15"/>
+</label>
+<label>Max spread (price units)
+              <input id="setMaxSpread" max="500" min="0.1" step="0.1" type="number" value="4"/>
+</label>
+<label>Max volatility (0 = off)
+              <input id="setMaxVolatility" max="1" min="0" step="0.001" type="number" value="0"/>
+</label>
+</div>
+</div>
+<div class="panel" style="margin-top:14px">
+<div class="panel-head"><div><div class="panel-kicker">EXECUTION BEHAVIOUR</div><h2>Order routing behaviour (non-credential)</h2></div></div>
+<div class="form-grid">
+<label>Trade cooldown (sec)
+              <input id="setTradeCooldown" max="3600" min="0" type="number" value="300"/>
+</label>
+<label>Max deviation (points)
+              <input id="setDeviation" max="500" min="1" type="number" value="20"/>
+</label>
+<label>Lifecycle reconcile (sec)
+              <input id="setLifecycleReconcile" max="60" min="2" type="number" value="5"/>
+</label>
+</div>
+<div class="form-row check-row" style="margin-top:12px">
+<label class="toggle"><input checked="" id="setOnePositionPerSymbol" type="checkbox"/><span class="toggle-ui"></span> One position per symbol</label>
+</div>
+<p class="muted" style="margin-top:8px">Broker login, passwords, and API keys are not configurable here. Magic number stays server-side from environment.</p>
+</div>
+<div class="panel" style="margin-top:14px">
+<div class="panel-head"><div><div class="panel-kicker">POSITION MANAGER / EXITS</div><h2>Adaptive exit rules</h2></div></div>
+<div class="form-row check-row">
+<label class="toggle"><input checked="" id="setExitManagerEnabled" type="checkbox"/><span class="toggle-ui"></span> Position manager enabled</label>
+<label class="toggle"><input checked="" id="setBreakEvenEnabled" type="checkbox"/><span class="toggle-ui"></span> Break-even</label>
+<label class="toggle"><input checked="" id="setTrailingEnabled" type="checkbox"/><span class="toggle-ui"></span> Trailing stop</label>
+<label class="toggle"><input checked="" id="setTrailingStructure" type="checkbox"/><span class="toggle-ui"></span> Trail on structure</label>
+<label class="toggle"><input id="setPartialEnabled" type="checkbox"/><span class="toggle-ui"></span> Partial exit</label>
+<label class="toggle"><input id="setSecondPartialEnabled" type="checkbox"/><span class="toggle-ui"></span> Second partial</label>
+<label class="toggle"><input checked="" id="setPeakGivebackEnabled" type="checkbox"/><span class="toggle-ui"></span> Peak giveback</label>
+<label class="toggle"><input id="setTimeStopEnabled" type="checkbox"/><span class="toggle-ui"></span> Time stop</label>
+<label class="toggle"><input checked="" id="setCloseUnprotected" type="checkbox"/><span class="toggle-ui"></span> Close if unprotected</label>
+<label class="toggle"><input checked="" id="setAIInvalidation" type="checkbox"/><span class="toggle-ui"></span> Thesis invalidation exit</label>
+</div>
+<div class="form-grid" style="margin-top:12px">
+<label>Break-even R <input id="setBreakEvenR" step="0.1" type="number" value="1.0"/></label>
+<label>BE offset R <input id="setBreakEvenOffsetR" step="0.01" type="number" value="0.05"/></label>
+<label>Trail start R <input id="setTrailingStartR" step="0.1" type="number" value="1.5"/></label>
+<label>Trail ATR mult <input id="setTrailingAtrMult" step="0.1" type="number" value="1.6"/></label>
+<label>Partial exit R <input id="setPartialR" step="0.1" type="number" value="1.0"/></label>
+<label>Partial % <input id="setPartialPercent" step="1" type="number" value="40"/></label>
+<label>2nd partial R <input id="setSecondPartialR" step="0.1" type="number" value="2.0"/></label>
+<label>2nd partial % <input id="setSecondPartialPercent" step="1" type="number" value="30"/></label>
+<label>Peak giveback trigger R <input id="setPeakGivebackTriggerR" step="0.1" type="number" value="2.0"/></label>
+<label>Peak giveback R <input id="setPeakGivebackR" step="0.1" type="number" value="0.9"/></label>
+<label>Max hold (min) <input id="setMaxHold" type="number" value="240"/></label>
+<label>Time-stop min progress R <input id="setTimeProgressR" step="0.05" type="number" value="0.25"/></label>
+<label>Invalidation confidence <input id="setAIInvalidationConfidence" step="0.05" type="number" value="0.85"/></label>
+<label>Invalidation cycles <input id="setAIInvalidationCycles" type="number" value="2"/></label>
+</div>
+</div>
+<div class="form-actions sticky-actions">
+<button class="btn btn-primary" onclick="saveSettings()" type="button">Save All Settings</button>
+<span class="muted" id="settingsSaveStatus"></span>
+<span class="muted" id="exitSaveMsg"></span>
+</div>
+<div class="panel" style="margin-top:16px">
+<div class="panel-head">
+<div><div class="panel-kicker">METHODOLOGY</div><h2>Audit formulas (40+)</h2></div>
+<button class="btn btn-ghost" onclick="loadMethodologyDocs()" type="button">Load docs</button>
+</div>
+<div class="log-list" id="methodologyDocs" style="padding:12px 16px;max-height:420px;overflow:auto">
+<div class="muted">Model equations, estimators, numerical schemes, and model-risk notes for platform audit.</div>
+</div>
+</div>
+</section>
+</div>
+</div>
+<dialog class="news-story-dialog" id="newsStoryDialog" aria-labelledby="newsStoryTitle">
+  <div class="news-story-shell">
+    <div class="news-story-head"><div><div class="panel-kicker">AI TRADING TEAM · STORY BRIEF</div><div class="news-story-source" id="newsStorySource">NEWS DESK</div></div><button class="btn btn-ghost btn-sm" type="button" onclick="closeNewsStory()" aria-label="Close story">Close ✕</button></div>
+    <h2 id="newsStoryTitle">Story headline</h2>
+    <div class="news-story-meta" id="newsStoryMeta"></div>
+    <div class="news-story-categories" id="newsStoryCategories"></div>
+    <section class="news-story-quant"><h3>Research triage &amp; evidence</h3><div id="newsStoryQuantMeta" class="news-story-quant-grid"><p class="muted">No triage metadata.</p></div></section>
+    <section class="news-story-summary"><h3>Available story summary</h3><div id="newsStorySummary"></div></section>
+    <section class="news-story-related"><h3>Related coverage in this News Desk</h3><div id="newsStoryRelated"></div></section>
+    <div class="news-story-footer"><span class="muted">Attribution is preserved. Full publisher articles remain with their original publisher.</span><a class="btn btn-primary btn-sm" id="newsStoryPublisherLink" href="#" target="_blank" rel="noopener noreferrer">Publisher reference ↗</a></div>
+  </div>
+</dialog>
+<div class="perf-badge" id="perfBadge">cache —</div>
+<div class="toast" id="toast"></div>
+<script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+<script src="/static/app.js?v=4.39.0"></script>
+</body>
+</html>
